@@ -30,12 +30,6 @@ const props = defineProps({
 
 const emit = defineEmits(['back', 'save', 'reset', 'reload', 'change-ui-settings'])
 const localPath = ref(props.modelValue)
-const themeOptions = [
-  { value: 'system', label: 'SYSTEM' },
-  { value: 'dark', label: 'DARK' },
-  { value: 'light', label: 'LIGHT' },
-]
-
 watch(
   () => props.modelValue,
   value => {
@@ -59,7 +53,7 @@ function emitUiSettingChange(key: 'showRecentOpened' | 'showOpenCount', checked:
 }
 
 // 主题模式只负责当前选项切换，不改动其他设置字段。
-function emitThemeModeChange(themeMode: string) {
+function emitThemeModeChange(themeMode: 'system' | 'dark' | 'light') {
   emit('change-ui-settings', { themeMode })
 }
 </script>
@@ -88,23 +82,33 @@ function emitThemeModeChange(themeMode: string) {
 
       <p v-if="error" class="field-error">[ ERROR: {{ error }} ]</p>
 
-      <div class="settings-theme-panel" aria-label="主题模式设置">
-        <p class="field-label">主题模式</p>
-        <div class="settings-theme-segmented">
-          <label
-            v-for="option in themeOptions"
-            :key="option.value"
-            class="settings-theme-segmented__item"
+      <div class="settings-panel">
+        <p class="mono-label">THEME MODE</p>
+        <div class="segmented-control" role="tablist" aria-label="主题模式">
+          <button
+            type="button"
+            class="segmented-control__button"
+            :class="{ 'segmented-control__button--active': themeMode === 'system' }"
+            @click="emitThemeModeChange('system')"
           >
-            <input
-              :checked="themeMode === option.value"
-              name="theme-mode"
-              type="radio"
-              :value="option.value"
-              @change="emitThemeModeChange(option.value)"
-            />
-            <span>{{ option.label }}</span>
-          </label>
+            SYSTEM
+          </button>
+          <button
+            type="button"
+            class="segmented-control__button"
+            :class="{ 'segmented-control__button--active': themeMode === 'dark' }"
+            @click="emitThemeModeChange('dark')"
+          >
+            DARK
+          </button>
+          <button
+            type="button"
+            class="segmented-control__button"
+            :class="{ 'segmented-control__button--active': themeMode === 'light' }"
+            @click="emitThemeModeChange('light')"
+          >
+            LIGHT
+          </button>
         </div>
       </div>
 

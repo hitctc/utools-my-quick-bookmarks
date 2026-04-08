@@ -67,39 +67,32 @@ const emit = defineEmits<{
 
 <template>
   <section class="page-shell page-shell--home">
-    <header class="hero hero--bookmarks">
-      <div class="hero-copy">
-        <p class="eyebrow">Quick Bookmarks</p>
-        <h1>我的快捷书签</h1>
-        <p class="hero-text">
-          使用 uTools 顶部输入框实时搜索书签标题、网址和目录，卡片支持点击打开与插件内置顶。
-        </p>
+    <header class="hero hero--nothing">
+      <div class="hero__lead">
+        <p class="mono-label">QUICK BOOKMARKS</p>
+        <div class="hero__metric">
+          <strong class="hero__number">{{ total }}</strong>
+          <div class="hero__copy">
+            <h1>我的快捷书签</h1>
+            <p class="hero__text">
+              使用 uTools 顶部输入框搜索、切换高亮并直接打开书签。
+            </p>
+          </div>
+        </div>
       </div>
-      <div class="hero-actions">
-        <button class="icon-button" @click="emit('open-settings')">
-          设置
+
+      <div class="hero__side">
+        <div class="hero__status-row">
+          <span class="status-chip">[ {{ themeStatus }} ]</span>
+          <span class="status-chip status-chip--muted">MODE {{ themeMode.toUpperCase() }}</span>
+        </div>
+        <p class="hero__path-label">BOOKMARK FILE</p>
+        <p class="hero__path" :title="bookmarkPath">{{ bookmarkPath || '尚未确定路径' }}</p>
+        <button class="technical-button" @click="emit('open-settings')">
+          SETTINGS
         </button>
       </div>
     </header>
-
-    <section class="summary-card summary-card--wide home-status-bar" aria-label="首页状态条">
-      <div class="summary-copy">
-        <p class="section-label">当前书签文件</p>
-        <p class="path-text">{{ bookmarkPath || '尚未确定路径' }}</p>
-      </div>
-      <div class="summary-pill">
-        <span>书签总数</span>
-        <strong>{{ total }}</strong>
-      </div>
-      <div class="summary-pill">
-        <span>主题模式</span>
-        <strong>{{ themeMode }}</strong>
-      </div>
-      <div class="summary-pill">
-        <span>主题状态</span>
-        <strong>{{ themeStatus }}</strong>
-      </div>
-    </section>
 
     <section v-if="!bootstrapped" class="state-card">
       <p>请通过 uTools 接入开发模式进入插件。</p>
@@ -140,18 +133,16 @@ const emit = defineEmits<{
     </template>
     <section
       v-if="bootstrapped && !loading && !error"
-      class="search-tip-card"
-      :class="{ 'search-tip-card--searching': isSearchMode }"
+      class="state-strip"
+      :class="{ 'state-strip--active': isSearchMode }"
     >
-      <p class="search-tip-card__title">
-        {{ isSearchMode ? '正在使用顶部输入框筛选书签' : '可以直接在顶部输入框搜索书签' }}
-      </p>
-      <p class="search-tip-card__copy">
+      <p class="state-strip__label">{{ isSearchMode ? '[ FILTERING ]' : '[ SEARCH READY ]' }}</p>
+      <p class="state-strip__copy">
         <template v-if="isSearchMode">
-          当前搜索词：<strong>{{ searchQuery }}</strong>。按方向键切换高亮卡片，按回车直接打开。
+          当前搜索词：<strong>{{ searchQuery }}</strong>，按方向键切换高亮，按回车打开。
         </template>
         <template v-else>
-          支持模糊匹配标题、URL 和目录路径，不会在页面里额外再放一个搜索框。
+          支持模糊匹配标题、URL 和目录路径，不在页面内额外提供搜索框。
         </template>
       </p>
     </section>
