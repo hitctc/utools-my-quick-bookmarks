@@ -36,6 +36,7 @@ const highlightedIndex = ref(0)
 const uiSettings = ref<BookmarkUiSettings>({
   showRecentOpened: true,
   showOpenCount: true,
+  themeMode: 'system',
 })
 const pinnedMap = ref<PinnedBookmarkMap>({})
 const recentOpenedMap = ref<RecentOpenedMap>({})
