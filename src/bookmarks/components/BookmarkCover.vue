@@ -8,6 +8,7 @@ const props = defineProps<{
   folderLabel: string
   sourceRoot: string
   openCount: number
+  showOpenCount: boolean
   isPinned: boolean
   active: boolean
 }>()
@@ -55,7 +56,7 @@ const coverStyle = computed(() => {
       <span class="bookmark-cover__chip" :class="{ 'bookmark-cover__chip--active': isPinned }">
         {{ isPinned ? '已置顶' : '可置顶' }}
       </span>
-      <span v-if="openCount > 0" class="bookmark-cover__count">{{ openCount }}</span>
+      <span v-if="showOpenCount && openCount > 0" class="bookmark-cover__count">{{ openCount }}</span>
     </div>
   </div>
 </template>

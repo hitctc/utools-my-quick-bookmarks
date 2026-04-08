@@ -1,8 +1,7 @@
 <script lang="ts" setup>
-import { computed } from 'vue'
 import BookmarksSection from './components/BookmarksSection.vue'
 import BookmarkCard from './components/BookmarkCard.vue'
-import type { BookmarkCardItem } from './types'
+import type { BookmarkCardItem, BookmarkSection } from './types'
 
 const props = defineProps({
   bookmarkPath: {
@@ -21,8 +20,28 @@ const props = defineProps({
     type: String,
     default: '',
   },
-  items: {
+  sections: {
     type: Array,
+    required: true,
+  },
+  highlightedCardKey: {
+    type: String,
+    default: '',
+  },
+  isSearchMode: {
+    type: Boolean,
+    required: true,
+  },
+  searchQuery: {
+    type: String,
+    default: '',
+  },
+  emptyText: {
+    type: String,
+    default: '',
+  },
+  showOpenCount: {
+    type: Boolean,
     required: true,
   },
   total: {
@@ -31,54 +50,11 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['open-settings'])
-
-// 首页现在只消费现有字段，把原始书签数据整理成卡片组件需要的稳定结构。
-function normalizeItem(item: any): BookmarkCardItem {
-  return {
-    id: String(item?.id ?? item?.url ?? `${item?.title || 'bookmark'}-${item?.dateAdded || '0'}`),
-    title: String(item?.title ?? '').trim() || '未命名书签',
-    url: String(item?.url ?? '').trim(),
-    folderPath: Array.isArray(item?.folderPath) ? item.folderPath : [],
-    sourceRoot: item?.sourceRoot || 'bookmark_bar',
-    dateAdded: String(item?.dateAdded ?? ''),
-    isPinned: Boolean(item?.isPinned),
-    openCount: Number(item?.openCount ?? 0) || 0,
-  }
-}
-
-const bookmarkGroups = computed(() => {
-  const normalized = (props.items as unknown[]).map(normalizeItem)
-  const pinned = normalized.filter(item => item.isPinned)
-  const regular = normalized.filter(item => !item.isPinned)
-
-  return [
-    {
-      key: 'pinned',
-      title: '置顶',
-      description: '优先展示在首页的本地卡片',
-      items: pinned,
-    },
-    {
-      key: 'all',
-      title: '全部书签',
-      description: '从 macOS Chrome Bookmarks 文件解析出的书签',
-      items: regular,
-    },
-  ].filter(group => group.items.length > 0)
-})
-
-// 点击卡片时优先走 uTools 的外部打开能力，缺省时回落到浏览器窗口打开。
-function handleOpenBookmark(url: string) {
-  if (!url) return
-
-  if (window.utools?.shellOpenExternal) {
-    window.utools.shellOpenExternal(url)
-    return
-  }
-
-  window.open(url, '_blank', 'noopener,noreferrer')
-}
+const emit = defineEmits<{
+  (event: 'open-settings'): void
+  (event: 'open-bookmark', item: BookmarkCardItem): void
+  (event: 'toggle-pin', item: BookmarkCardItem): void
+}>()
 </script>
 
 <template>
@@ -88,7 +64,7 @@ function handleOpenBookmark(url: string) {
         <p class="eyebrow">Quick Bookmarks</p>
         <h1>我的快捷书签</h1>
         <p class="hero-text">
-          以卡片方式展示 Chrome 书签内容，保留书签路径、来源与本地状态的视觉入口。
+          使用 uTools 顶部输入框实时搜索书签标题、网址和目录，卡片支持点击打开与插件内置顶。
         </p>
       </div>
       <button class="icon-button" @click="emit('open-settings')">
@@ -116,31 +92,50 @@ function handleOpenBookmark(url: string) {
     <section v-else-if="error" class="state-card state-error">
       <p>{{ error }}</p>
     </section>
-    <section v-else-if="!bookmarkGroups.length" class="state-card">
-      <p>当前没有可展示的书签结果。</p>
+    <section v-else-if="!props.sections.length" class="state-card">
+      <p>{{ props.emptyText || '当前没有可展示的书签结果。' }}</p>
     </section>
     <template v-else>
       <BookmarksSection
-        v-for="group in bookmarkGroups"
-        :key="group.key"
-        :title="group.title"
-        :description="group.description"
-        :count="group.items.length"
+        v-for="section in (props.sections as BookmarkSection[])"
+        :key="section.key"
+        :title="section.title"
+        :description="section.description"
+        :count="section.entries.length"
       >
         <div class="bookmark-grid">
           <article
-            v-for="item in group.items"
-            :key="`${item.sourceRoot}-${item.id}-${item.url}`"
+            v-for="entry in section.entries"
+            :key="entry.cardKey"
             class="bookmark-grid__item"
           >
             <BookmarkCard
-              :item="item"
-              :active="false"
-              @open="handleOpenBookmark"
+              :item="entry.item"
+              :show-open-count="props.showOpenCount"
+              :active="entry.cardKey === props.highlightedCardKey"
+              @open="emit('open-bookmark', $event)"
+              @toggle-pin="emit('toggle-pin', $event)"
             />
           </article>
         </div>
       </BookmarksSection>
     </template>
+    <section
+      v-if="bootstrapped && !loading && !error"
+      class="search-tip-card"
+      :class="{ 'search-tip-card--searching': isSearchMode }"
+    >
+      <p class="search-tip-card__title">
+        {{ isSearchMode ? '正在使用顶部输入框筛选书签' : '可以直接在顶部输入框搜索书签' }}
+      </p>
+      <p class="search-tip-card__copy">
+        <template v-if="isSearchMode">
+          当前搜索词：<strong>{{ searchQuery }}</strong>。按方向键切换高亮卡片，按回车直接打开。
+        </template>
+        <template v-else>
+          支持模糊匹配标题、URL 和目录路径，不会在页面里额外再放一个搜索框。
+        </template>
+      </p>
+    </section>
   </section>
 </template>

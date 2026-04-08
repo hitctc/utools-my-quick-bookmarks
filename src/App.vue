@@ -1,22 +1,26 @@
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import HomeView from './bookmarks/HomeView.vue'
 import SettingsView from './bookmarks/SettingsView.vue'
-
-type BookmarkItem = {
-  id: string
-  title: string
-  url: string
-  folderPath: string[]
-  sourceRoot: 'bookmark_bar' | 'other' | 'synced'
-  dateAdded: string
-}
+import type {
+  BookmarkCardEntry,
+  BookmarkCardItem,
+  BookmarkItem,
+  BookmarkRecentRecord,
+  BookmarkSection,
+  BookmarkUiSettings,
+  BookmarkSourceRoot,
+} from './bookmarks/types'
 
 type BookmarkLoadResult = {
   filePath: string
   total: number
   items: BookmarkItem[]
 }
+
+type BookmarkUiSettingsPatch = Partial<BookmarkUiSettings>
+type PinnedBookmarkMap = Record<string, number>
+type RecentOpenedMap = Record<string, BookmarkRecentRecord>
 
 const currentView = ref<'home' | 'settings'>('home')
 const bookmarkPath = ref('')
@@ -27,6 +31,128 @@ const saving = ref(false)
 const homeError = ref('')
 const settingsError = ref('')
 const bootstrapped = ref(false)
+const searchQuery = ref('')
+const highlightedIndex = ref(0)
+const uiSettings = ref<BookmarkUiSettings>({
+  showRecentOpened: true,
+  showOpenCount: true,
+})
+const pinnedMap = ref<PinnedBookmarkMap>({})
+const recentOpenedMap = ref<RecentOpenedMap>({})
+
+// 统一把底层解析结果整理成首页卡片模型，避免展示层重复拼字段。
+function normalizeBookmarkItem(item: BookmarkItem): BookmarkItem {
+  const fallbackId = `${item?.url || 'bookmark'}-${item?.dateAdded || '0'}`
+
+  return {
+    id: String(item?.id ?? fallbackId),
+    title: String(item?.title ?? '').trim(),
+    url: String(item?.url ?? '').trim(),
+    folderPath: Array.isArray(item?.folderPath) ? item.folderPath : [],
+    sourceRoot: ['bookmark_bar', 'other', 'synced'].includes(String(item?.sourceRoot))
+      ? (item.sourceRoot as BookmarkSourceRoot)
+      : 'bookmark_bar',
+    dateAdded: String(item?.dateAdded ?? ''),
+  }
+}
+
+// 搜索用的文本会把标题、地址和目录都串起来，方便做简单模糊匹配。
+function buildSearchText(item: BookmarkCardItem) {
+  return [
+    item.title || '',
+    item.url || '',
+    Array.isArray(item.folderPath) ? item.folderPath.join(' / ') : '',
+  ]
+    .join(' ')
+    .toLowerCase()
+}
+
+// 置顶区要把已置顶书签按置顶时间排好，避免每次刷新顺序乱跳。
+function sortPinnedItems(left: BookmarkCardItem, right: BookmarkCardItem) {
+  const leftPinnedAt = Number(pinnedMap.value[left.id] || 0)
+  const rightPinnedAt = Number(pinnedMap.value[right.id] || 0)
+  return leftPinnedAt - rightPinnedAt
+}
+
+// 最近打开区按最后打开时间倒序展示，时间相同再比较打开次数。
+function sortRecentItems(left: BookmarkCardItem, right: BookmarkCardItem) {
+  const leftRecord = recentOpenedMap.value[left.id]
+  const rightRecord = recentOpenedMap.value[right.id]
+  const leftOpenedAt = Number(leftRecord?.openedAt || 0)
+  const rightOpenedAt = Number(rightRecord?.openedAt || 0)
+
+  if (leftOpenedAt !== rightOpenedAt) {
+    return rightOpenedAt - leftOpenedAt
+  }
+
+  return Number(rightRecord?.openCount || 0) - Number(leftRecord?.openCount || 0)
+}
+
+// 区块里的卡片要带上稳定 key，这样键盘高亮命中的是具体卡片位置而不是纯书签 id。
+function buildSectionEntries(sectionKey: string, list: BookmarkCardItem[]): BookmarkCardEntry[] {
+  return list.map((item, index) => ({
+    cardKey: `${sectionKey}:${item.id}:${index}`,
+    item,
+  }))
+}
+
+// 顶部输入框只在首页工作，进入设置页后需要还原成普通状态。
+function syncSubInput() {
+  if (!window.utools?.setSubInput || !window.utools?.removeSubInput) {
+    return
+  }
+
+  if (currentView.value !== 'home' || !bootstrapped.value) {
+    window.utools.removeSubInput()
+    return
+  }
+
+  window.utools.setSubInput(
+    ({ text }) => {
+      searchQuery.value = String(text || '')
+      highlightedIndex.value = 0
+    },
+    '搜索书签标题、网址或目录',
+    true,
+  )
+
+  if (window.utools.setSubInputValue) {
+    window.utools.setSubInputValue(searchQuery.value)
+  }
+}
+
+// 键盘导航始终对当前可见卡片生效，回车直接复用同一套打开逻辑。
+function handleWindowKeydown(event: KeyboardEvent) {
+  if (currentView.value !== 'home' || loading.value || homeError.value) {
+    return
+  }
+  if (event.metaKey || event.ctrlKey || event.altKey) {
+    return
+  }
+
+  const entries = visibleEntries.value
+  if (!entries.length) {
+    return
+  }
+
+  if (event.key === 'ArrowDown') {
+    event.preventDefault()
+    window.utools?.subInputBlur?.()
+    highlightedIndex.value = Math.min(highlightedIndex.value + 1, entries.length - 1)
+  } else if (event.key === 'ArrowUp') {
+    event.preventDefault()
+    window.utools?.subInputBlur?.()
+    highlightedIndex.value = Math.max(highlightedIndex.value - 1, 0)
+  } else if (event.key === 'Enter') {
+    event.preventDefault()
+    const current = entries[highlightedIndex.value]
+    if (current) {
+      handleOpenBookmark(current.item)
+    }
+  } else if (event.key === 'Escape') {
+    window.utools?.subInputFocus?.()
+  }
+}
 
 // 统一根据路径加载书签，并把错误落到当前所在视图。
 function loadBookmarks(nextPath = bookmarkPath.value, targetView: 'home' | 'settings' = currentView.value) {
@@ -37,7 +163,7 @@ function loadBookmarks(nextPath = bookmarkPath.value, targetView: 'home' | 'sett
   try {
     const result = window.services.loadChromeBookmarks(nextPath) as BookmarkLoadResult
     bookmarkPath.value = result.filePath
-    items.value = result.items
+    items.value = result.items.map(normalizeBookmarkItem)
     total.value = result.total
   } catch (error) {
     errorRef.value = error instanceof Error ? error.message : '读取书签文件失败'
@@ -53,6 +179,8 @@ function initializeApp() {
   currentView.value = 'home'
   homeError.value = ''
   settingsError.value = ''
+  searchQuery.value = ''
+  highlightedIndex.value = 0
 
   if (!window.utools || !window.services) {
     homeError.value = '请通过 uTools 接入开发模式打开当前插件'
@@ -60,9 +188,13 @@ function initializeApp() {
   }
 
   const settings = window.services.getBookmarkSettings() as { chromeBookmarksPath: string }
+  uiSettings.value = window.services.getBookmarkUiSettings() as BookmarkUiSettings
+  pinnedMap.value = window.services.getPinnedBookmarks() as PinnedBookmarkMap
+  recentOpenedMap.value = window.services.getRecentOpenedBookmarks() as RecentOpenedMap
   bookmarkPath.value = settings.chromeBookmarksPath
   loadBookmarks(settings.chromeBookmarksPath, 'home')
   bootstrapped.value = true
+  syncSubInput()
 }
 
 // 保存路径后立即重新解析；只有重新解析成功时才返回首页。
@@ -100,7 +232,144 @@ function reloadFromSettings(nextPath: string) {
   loadBookmarks(nextPath, 'settings')
 }
 
+// 设置页的展示开关即时持久化，首页读取的是同一份本地状态。
+function changeUiSettings(patch: BookmarkUiSettingsPatch) {
+  uiSettings.value = window.services.saveBookmarkUiSettings(patch) as BookmarkUiSettings
+}
+
+// 置顶只影响插件内展示顺序，不会改 Chrome 源书签文件。
+function handleTogglePin(item: BookmarkCardItem) {
+  pinnedMap.value = window.services.togglePinnedBookmarkState(item.id) as PinnedBookmarkMap
+}
+
+// 打开书签时同时更新最近打开和打开次数，首页状态即时跟上。
+function handleOpenBookmark(item: BookmarkCardItem) {
+  homeError.value = ''
+
+  try {
+    recentOpenedMap.value = window.services.openBookmarkUrl(item.id, item.url) as RecentOpenedMap
+  } catch (error) {
+    homeError.value = error instanceof Error ? error.message : '打开书签失败'
+  }
+}
+
+const mergedItems = computed<BookmarkCardItem[]>(() =>
+  items.value.map(item => {
+    const recentRecord = recentOpenedMap.value[item.id]
+    return {
+      ...item,
+      title: item.title || '未命名书签',
+      isPinned: Boolean(pinnedMap.value[item.id]),
+      openCount: Number(recentRecord?.openCount || 0),
+    }
+  }),
+)
+
+const searchableItems = computed(() => {
+  const query = searchQuery.value.trim().toLowerCase()
+  if (!query) {
+    return mergedItems.value
+  }
+
+  return mergedItems.value.filter(item => buildSearchText(item).includes(query))
+})
+
+const pinnedItems = computed(() =>
+  mergedItems.value.filter(item => item.isPinned).sort(sortPinnedItems),
+)
+
+const recentItems = computed(() =>
+  mergedItems.value
+    .filter(item => Boolean(recentOpenedMap.value[item.id]))
+    .sort(sortRecentItems),
+)
+
+const regularItems = computed(() =>
+  mergedItems.value.filter(item => !item.isPinned),
+)
+
+const visibleSections = computed<BookmarkSection[]>(() => {
+  const query = searchQuery.value.trim()
+  if (query) {
+    return searchableItems.value.length
+      ? [
+          {
+            key: 'search',
+            title: '搜索结果',
+            description: `匹配“${query}”的书签卡片`,
+            entries: buildSectionEntries('search', searchableItems.value),
+          },
+        ]
+      : []
+  }
+
+  const sections: BookmarkSection[] = []
+
+  if (pinnedItems.value.length) {
+    sections.push({
+      key: 'pinned',
+      title: '置顶',
+      description: '优先展示在首页的插件内置顶书签',
+      entries: buildSectionEntries('pinned', pinnedItems.value),
+    })
+  }
+
+  if (uiSettings.value.showRecentOpened && recentItems.value.length) {
+    sections.push({
+      key: 'recent',
+      title: '最近打开',
+      description: '这里只记录插件内打开过的书签，不回写 Chrome 源文件',
+      entries: buildSectionEntries('recent', recentItems.value),
+    })
+  }
+
+  if (regularItems.value.length) {
+    sections.push({
+      key: 'all',
+      title: '全部书签',
+      description: '从 macOS Chrome Bookmarks 文件解析出的书签',
+      entries: buildSectionEntries('all', regularItems.value),
+    })
+  }
+
+  return sections
+})
+
+const visibleEntries = computed(() => visibleSections.value.flatMap(section => section.entries))
+
+const highlightedCardKey = computed(() => {
+  if (!visibleEntries.value.length) {
+    return ''
+  }
+
+  const safeIndex = Math.min(highlightedIndex.value, visibleEntries.value.length - 1)
+  return visibleEntries.value[safeIndex]?.cardKey || ''
+})
+
+const emptyText = computed(() => {
+  if (searchQuery.value.trim()) {
+    return `没有找到和“${searchQuery.value.trim()}”匹配的书签。`
+  }
+
+  return '当前没有可展示的书签结果。'
+})
+
+watch(currentView, () => {
+  syncSubInput()
+})
+
+watch(visibleEntries, entries => {
+  if (!entries.length) {
+    highlightedIndex.value = 0
+    return
+  }
+
+  highlightedIndex.value = Math.min(highlightedIndex.value, entries.length - 1)
+})
+
 onMounted(() => {
+  window.addEventListener('keydown', handleWindowKeydown)
+
   if (!window.utools?.onPluginEnter) {
     initializeApp()
     return
@@ -109,6 +378,11 @@ onMounted(() => {
   window.utools.onPluginEnter(() => {
     initializeApp()
   })
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleWindowKeydown)
+  window.utools?.removeSubInput?.()
 })
 </script>
 
@@ -119,18 +393,28 @@ onMounted(() => {
     :bootstrapped="bootstrapped"
     :loading="loading"
     :error="homeError"
-    :items="items"
+    :sections="visibleSections"
+    :highlighted-card-key="highlightedCardKey"
+    :is-search-mode="Boolean(searchQuery.trim())"
+    :search-query="searchQuery"
+    :empty-text="emptyText"
+    :show-open-count="uiSettings.showOpenCount"
     :total="total"
+    @open-bookmark="handleOpenBookmark"
+    @toggle-pin="handleTogglePin"
     @open-settings="currentView = 'settings'"
   />
   <SettingsView
     v-else
     :model-value="bookmarkPath"
+    :show-recent-opened="uiSettings.showRecentOpened"
+    :show-open-count="uiSettings.showOpenCount"
     :saving="saving"
     :error="settingsError"
     @back="currentView = 'home'"
     @save="saveSettings"
     @reset="resetSettings"
     @reload="reloadFromSettings"
+    @change-ui-settings="changeUiSettings"
   />
 </template>

@@ -6,6 +6,14 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  showRecentOpened: {
+    type: Boolean,
+    required: true,
+  },
+  showOpenCount: {
+    type: Boolean,
+    required: true,
+  },
   saving: {
     type: Boolean,
     required: true,
@@ -16,7 +24,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['back', 'save', 'reset', 'reload'])
+const emit = defineEmits(['back', 'save', 'reset', 'reload', 'change-ui-settings'])
 const localPath = ref(props.modelValue)
 
 watch(
@@ -34,6 +42,11 @@ function emitSave() {
 // 允许用户用当前输入路径直接试读，不必先保存。
 function emitReload() {
   emit('reload', localPath.value)
+}
+
+// 设置页的展示开关即时生效，不要求用户额外点保存按钮。
+function emitUiSettingChange(key: 'showRecentOpened' | 'showOpenCount', checked: boolean) {
+  emit('change-ui-settings', { [key]: checked })
 }
 </script>
 
@@ -61,10 +74,38 @@ function emitReload() {
 
       <p v-if="error" class="field-error">{{ error }}</p>
 
+      <div class="settings-toggle-list">
+        <label class="settings-toggle">
+          <span>
+            <strong>首页显示最近打开</strong>
+            <small>打开后会在首页展示最近打开过的书签分区。</small>
+          </span>
+          <input
+            :checked="showRecentOpened"
+            class="settings-toggle__input"
+            type="checkbox"
+            @change="emitUiSettingChange('showRecentOpened', ($event.target as HTMLInputElement).checked)"
+          />
+        </label>
+
+        <label class="settings-toggle">
+          <span>
+            <strong>显示打开次数</strong>
+            <small>打开后会在书签卡片右下角显示累计打开次数。</small>
+          </span>
+          <input
+            :checked="showOpenCount"
+            class="settings-toggle__input"
+            type="checkbox"
+            @change="emitUiSettingChange('showOpenCount', ($event.target as HTMLInputElement).checked)"
+          />
+        </label>
+      </div>
+
       <div class="actions-row">
         <button class="primary-button" :disabled="saving" @click="emitSave">保存并读取</button>
         <button class="secondary-button" :disabled="saving" @click="emit('reset')">恢复默认路径</button>
-        <button class="secondary-button" :disabled="saving" @click="emitReload">重新读取</button>
+        <button class="secondary-button" :disabled="saving" @click="emitReload">刷新书签</button>
       </div>
     </section>
   </section>

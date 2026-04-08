@@ -256,6 +256,33 @@ a {
   min-width: 0;
 }
 
+.search-tip-card {
+  padding: 18px 20px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px dashed var(--line-strong);
+}
+
+.search-tip-card--searching {
+  background: rgba(142, 111, 79, 0.08);
+  border-color: rgba(142, 111, 79, 0.28);
+}
+
+.search-tip-card__title,
+.search-tip-card__copy {
+  margin: 0;
+}
+
+.search-tip-card__title {
+  font-weight: 700;
+}
+
+.search-tip-card__copy {
+  margin-top: 6px;
+  color: var(--ink-700);
+  line-height: 1.6;
+}
+
 .bookmark-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -273,6 +300,12 @@ a {
 
 .bookmark-card--active {
   z-index: 1;
+}
+
+.bookmark-card--active .bookmark-cover {
+  transform: translateY(-2px);
+  border-color: rgba(142, 111, 79, 0.44);
+  box-shadow: 0 20px 46px rgba(40, 32, 24, 0.16);
 }
 
 .bookmark-card__pin {
@@ -490,6 +523,41 @@ a {
   flex-wrap: wrap;
   gap: 12px;
   margin-top: 18px;
+}
+
+.settings-toggle-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.settings-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.settings-toggle strong,
+.settings-toggle small {
+  display: block;
+}
+
+.settings-toggle small {
+  margin-top: 4px;
+  color: var(--ink-700);
+  line-height: 1.5;
+}
+
+.settings-toggle__input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  flex: 0 0 auto;
 }
 
 @media (max-width: 720px) {

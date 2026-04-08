@@ -6,14 +6,16 @@ const props = withDefaults(
   defineProps<{
     item: BookmarkCardItem
     active?: boolean
+    showOpenCount?: boolean
   }>(),
   {
     active: false,
+    showOpenCount: true,
   },
 )
 
 const emit = defineEmits<{
-  (event: 'open', url: string): void
+  (event: 'open', item: BookmarkCardItem): void
   (event: 'toggle-pin', item: BookmarkCardItem): void
 }>()
 
@@ -27,7 +29,7 @@ function formatFolderPath(folderPath: string[]) {
 
 // 打开动作只负责把 URL 交回上层，避免卡片组件自己绑定具体的打开实现。
 function handleOpen() {
-  emit('open', props.item.url)
+  emit('open', props.item)
 }
 
 // 置顶按钮先保留交互壳，后续接入本地状态时只需要补上父级监听。
@@ -59,6 +61,7 @@ function handleTogglePin(event: MouseEvent) {
         :folder-label="formatFolderPath(item.folderPath)"
         :source-root="item.sourceRoot"
         :open-count="item.openCount"
+        :show-open-count="showOpenCount"
         :is-pinned="item.isPinned"
         :active="active"
       />
