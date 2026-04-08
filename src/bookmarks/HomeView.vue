@@ -44,6 +44,14 @@ const props = defineProps({
     type: Boolean,
     required: true,
   },
+  themeMode: {
+    type: String,
+    required: true,
+  },
+  themeStatus: {
+    type: String,
+    required: true,
+  },
   total: {
     type: Number,
     required: true,
@@ -67,12 +75,14 @@ const emit = defineEmits<{
           使用 uTools 顶部输入框实时搜索书签标题、网址和目录，卡片支持点击打开与插件内置顶。
         </p>
       </div>
-      <button class="icon-button" @click="emit('open-settings')">
-        设置
-      </button>
+      <div class="hero-actions">
+        <button class="icon-button" @click="emit('open-settings')">
+          设置
+        </button>
+      </div>
     </header>
 
-    <section class="summary-card summary-card--wide">
+    <section class="summary-card summary-card--wide home-status-bar" aria-label="首页状态条">
       <div class="summary-copy">
         <p class="section-label">当前书签文件</p>
         <p class="path-text">{{ bookmarkPath || '尚未确定路径' }}</p>
@@ -80,6 +90,14 @@ const emit = defineEmits<{
       <div class="summary-pill">
         <span>书签总数</span>
         <strong>{{ total }}</strong>
+      </div>
+      <div class="summary-pill">
+        <span>主题模式</span>
+        <strong>{{ themeMode }}</strong>
+      </div>
+      <div class="summary-pill">
+        <span>主题状态</span>
+        <strong>{{ themeStatus }}</strong>
       </div>
     </section>
 

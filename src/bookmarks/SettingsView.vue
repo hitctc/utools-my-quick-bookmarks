@@ -6,6 +6,10 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  themeMode: {
+    type: String,
+    required: true,
+  },
   showRecentOpened: {
     type: Boolean,
     required: true,
@@ -26,6 +30,11 @@ const props = defineProps({
 
 const emit = defineEmits(['back', 'save', 'reset', 'reload', 'change-ui-settings'])
 const localPath = ref(props.modelValue)
+const themeOptions = [
+  { value: 'system', label: 'SYSTEM' },
+  { value: 'dark', label: 'DARK' },
+  { value: 'light', label: 'LIGHT' },
+]
 
 watch(
   () => props.modelValue,
@@ -47,6 +56,11 @@ function emitReload() {
 // 设置页的展示开关即时生效，不要求用户额外点保存按钮。
 function emitUiSettingChange(key: 'showRecentOpened' | 'showOpenCount', checked: boolean) {
   emit('change-ui-settings', { [key]: checked })
+}
+
+// 主题模式只负责当前选项切换，不改动其他设置字段。
+function emitThemeModeChange(themeMode: string) {
+  emit('change-ui-settings', { themeMode })
 }
 </script>
 
@@ -72,7 +86,27 @@ function emitUiSettingChange(key: 'showRecentOpened' | 'showOpenCount', checked:
         placeholder="/Users/你的用户名/Library/Application Support/Google/Chrome/Default/Bookmarks"
       />
 
-      <p v-if="error" class="field-error">{{ error }}</p>
+      <p v-if="error" class="field-error">[ ERROR: {{ error }} ]</p>
+
+      <div class="settings-theme-panel" aria-label="主题模式设置">
+        <p class="field-label">主题模式</p>
+        <div class="settings-theme-segmented">
+          <label
+            v-for="option in themeOptions"
+            :key="option.value"
+            class="settings-theme-segmented__item"
+          >
+            <input
+              :checked="themeMode === option.value"
+              name="theme-mode"
+              type="radio"
+              :value="option.value"
+              @change="emitThemeModeChange(option.value)"
+            />
+            <span>{{ option.label }}</span>
+          </label>
+        </div>
+      </div>
 
       <div class="settings-toggle-list">
         <label class="settings-toggle">
