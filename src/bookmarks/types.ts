@@ -1,4 +1,6 @@
 export type BookmarkSourceRoot = 'bookmark_bar' | 'other' | 'synced'
+export type BookmarkThemeMode = 'system' | 'dark' | 'light'
+export type BookmarkResolvedTheme = 'dark' | 'light'
 
 export interface BookmarkItem {
   id: string
@@ -23,6 +25,7 @@ export interface BookmarkRecentRecord {
 export interface BookmarkUiSettings {
   showRecentOpened: boolean
   showOpenCount: boolean
+  themeMode: BookmarkThemeMode
 }
 
 export interface BookmarkCardEntry {

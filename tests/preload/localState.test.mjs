@@ -19,6 +19,7 @@ test('normalizeUiSettings merges saved settings with defaults', () => {
   assert.deepEqual(result, {
     showRecentOpened: false,
     showOpenCount: true,
+    themeMode: 'system',
   })
 })
 
@@ -31,6 +32,39 @@ test('normalizeUiSettings keeps both recent-opened and open-count toggles', () =
   assert.deepEqual(result, {
     showRecentOpened: false,
     showOpenCount: false,
+    themeMode: 'system',
+  })
+})
+
+test('normalizeUiSettings falls back to system theme mode for missing or invalid values', () => {
+  const missingResult = normalizeUiSettings({})
+  const invalidResult = normalizeUiSettings({ themeMode: 'neon' })
+
+  assert.deepEqual(missingResult, {
+    showRecentOpened: true,
+    showOpenCount: true,
+    themeMode: 'system',
+  })
+  assert.deepEqual(invalidResult, {
+    showRecentOpened: true,
+    showOpenCount: true,
+    themeMode: 'system',
+  })
+})
+
+test('normalizeUiSettings preserves dark and light theme modes', () => {
+  const darkResult = normalizeUiSettings({ themeMode: 'dark' })
+  const lightResult = normalizeUiSettings({ themeMode: 'light' })
+
+  assert.deepEqual(darkResult, {
+    showRecentOpened: true,
+    showOpenCount: true,
+    themeMode: 'dark',
+  })
+  assert.deepEqual(lightResult, {
+    showRecentOpened: true,
+    showOpenCount: true,
+    themeMode: 'light',
   })
 })
 

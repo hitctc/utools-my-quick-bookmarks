@@ -1,11 +1,15 @@
 const DEFAULT_UI_SETTINGS = {
   showRecentOpened: true,
   showOpenCount: true,
+  themeMode: 'system',
 }
+
+const VALID_THEME_MODES = new Set(['system', 'dark', 'light'])
 
 // 统一把设置对象补齐为前端可以直接消费的开关结构。
 function normalizeUiSettings(raw) {
   const data = raw && typeof raw === 'object' ? raw : {}
+  const themeMode = VALID_THEME_MODES.has(data.themeMode) ? data.themeMode : DEFAULT_UI_SETTINGS.themeMode
 
   return {
     showRecentOpened:
@@ -16,6 +20,7 @@ function normalizeUiSettings(raw) {
       typeof data.showOpenCount === 'boolean'
         ? data.showOpenCount
         : DEFAULT_UI_SETTINGS.showOpenCount,
+    themeMode,
   }
 }
 
