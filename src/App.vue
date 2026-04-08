@@ -2,13 +2,20 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import HomeView from './bookmarks/HomeView.vue'
 import SettingsView from './bookmarks/SettingsView.vue'
+import {
+  formatThemeStatus,
+  resolveThemeMode,
+  SYSTEM_THEME_QUERY,
+} from './bookmarks/theme.js'
 import type {
   BookmarkCardEntry,
   BookmarkCardItem,
   BookmarkItem,
   BookmarkRecentRecord,
   BookmarkSection,
+  BookmarkResolvedTheme,
   BookmarkUiSettings,
+  BookmarkThemeMode,
   BookmarkSourceRoot,
 } from './bookmarks/types'
 
@@ -38,8 +45,10 @@ const uiSettings = ref<BookmarkUiSettings>({
   showOpenCount: true,
   themeMode: 'system',
 })
+const prefersDark = ref(false)
 const pinnedMap = ref<PinnedBookmarkMap>({})
 const recentOpenedMap = ref<RecentOpenedMap>({})
+const systemThemeQuery = ref<MediaQueryList | null>(null)
 
 // 统一把底层解析结果整理成首页卡片模型，避免展示层重复拼字段。
 function normalizeBookmarkItem(item: BookmarkItem): BookmarkItem {
@@ -66,6 +75,36 @@ function buildSearchText(item: BookmarkCardItem) {
   ]
     .join(' ')
     .toLowerCase()
+}
+
+// 系统主题状态只要跟浏览器媒体查询同步一次，后续就由监听器保持更新。
+function syncPrefersDarkState(queryList: MediaQueryList | MediaQueryListEvent | null) {
+  if (!queryList) {
+    prefersDark.value = false
+    return
+  }
+
+  prefersDark.value = Boolean('matches' in queryList ? queryList.matches : false)
+}
+
+// 兼容新旧 MediaQueryList API，确保系统主题切换时都能收到变化。
+function attachSystemThemeListener(queryList: MediaQueryList) {
+  if ('addEventListener' in queryList) {
+    queryList.addEventListener('change', syncPrefersDarkState)
+    return
+  }
+
+  queryList.addListener(syncPrefersDarkState)
+}
+
+// 解除监听时也要兼容新旧 API，不然 uTools 里多次进入会堆积回调。
+function detachSystemThemeListener(queryList: MediaQueryList) {
+  if ('removeEventListener' in queryList) {
+    queryList.removeEventListener('change', syncPrefersDarkState)
+    return
+  }
+
+  queryList.removeListener(syncPrefersDarkState)
 }
 
 // 置顶区要把已置顶书签按置顶时间排好，避免每次刷新顺序乱跳。
@@ -254,6 +293,12 @@ function handleOpenBookmark(item: BookmarkCardItem) {
   }
 }
 
+const themeMode = computed<BookmarkThemeMode>(() => uiSettings.value.themeMode)
+const resolvedTheme = computed<BookmarkResolvedTheme>(() =>
+  resolveThemeMode(themeMode.value, prefersDark.value),
+)
+const themeStatus = computed(() => formatThemeStatus(themeMode.value, resolvedTheme.value))
+
 const mergedItems = computed<BookmarkCardItem[]>(() =>
   items.value.map(item => {
     const recentRecord = recentOpenedMap.value[item.id]
@@ -355,6 +400,18 @@ const emptyText = computed(() => {
   return '当前没有可展示的书签结果。'
 })
 
+watch(
+  resolvedTheme,
+  value => {
+    if (typeof document === 'undefined') {
+      return
+    }
+
+    document.documentElement.dataset.theme = value
+  },
+  { immediate: true },
+)
+
 watch(currentView, () => {
   syncSubInput()
 })
@@ -371,6 +428,12 @@ watch(visibleEntries, entries => {
 onMounted(() => {
   window.addEventListener('keydown', handleWindowKeydown)
 
+  if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+    systemThemeQuery.value = window.matchMedia(SYSTEM_THEME_QUERY)
+    syncPrefersDarkState(systemThemeQuery.value)
+    attachSystemThemeListener(systemThemeQuery.value)
+  }
+
   if (!window.utools?.onPluginEnter) {
     initializeApp()
     return
@@ -383,6 +446,10 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleWindowKeydown)
+  if (systemThemeQuery.value) {
+    detachSystemThemeListener(systemThemeQuery.value)
+    systemThemeQuery.value = null
+  }
   window.utools?.removeSubInput?.()
 })
 </script>
@@ -400,6 +467,8 @@ onBeforeUnmount(() => {
     :search-query="searchQuery"
     :empty-text="emptyText"
     :show-open-count="uiSettings.showOpenCount"
+    :theme-mode="themeMode"
+    :theme-status="themeStatus"
     :total="total"
     @open-bookmark="handleOpenBookmark"
     @toggle-pin="handleTogglePin"
@@ -410,6 +479,8 @@ onBeforeUnmount(() => {
     :model-value="bookmarkPath"
     :show-recent-opened="uiSettings.showRecentOpened"
     :show-open-count="uiSettings.showOpenCount"
+    :theme-mode="themeMode"
+    :theme-status="themeStatus"
     :saving="saving"
     :error="settingsError"
     @back="currentView = 'home'"
