@@ -136,6 +136,18 @@ function buildSectionEntries(sectionKey: string, list: BookmarkCardItem[]): Book
   }))
 }
 
+// 只有读到一份完整可用的书签结果后，才把它应用到首页状态里。
+function applyBookmarkLoadResult(result: BookmarkLoadResult) {
+  bookmarkPath.value = result.filePath
+  items.value = result.items.map(normalizeBookmarkItem)
+  total.value = result.total
+}
+
+// 先验证路径是否真的可读，再决定要不要把结果写进当前状态或持久化配置。
+function validateChromeBookmarks(nextPath: string) {
+  return window.services.loadChromeBookmarks(nextPath) as BookmarkLoadResult
+}
+
 // 顶部输入框只在首页工作，进入设置页后需要还原成普通状态。
 function syncSubInput() {
   if (!window.utools?.setSubInput || !window.utools?.removeSubInput) {
@@ -201,10 +213,7 @@ function loadBookmarks(nextPath = bookmarkPath.value, targetView: 'home' | 'sett
   errorRef.value = ''
 
   try {
-    const result = window.services.loadChromeBookmarks(nextPath) as BookmarkLoadResult
-    bookmarkPath.value = result.filePath
-    items.value = result.items.map(normalizeBookmarkItem)
-    total.value = result.total
+    applyBookmarkLoadResult(validateChromeBookmarks(nextPath))
   } catch (error) {
     errorRef.value = error instanceof Error ? error.message : '读取书签文件失败'
     items.value = []
@@ -243,12 +252,14 @@ function saveSettings(nextPath: string) {
   settingsError.value = ''
 
   try {
-    const settings = window.services.saveBookmarkSettings(nextPath) as { chromeBookmarksPath: string }
+    const loaded = validateChromeBookmarks(nextPath)
+    const settings = window.services.saveBookmarkSettings(loaded.filePath) as { chromeBookmarksPath: string }
+    applyBookmarkLoadResult(loaded)
     bookmarkPath.value = settings.chromeBookmarksPath
-    loadBookmarks(settings.chromeBookmarksPath, 'settings')
-    if (!settingsError.value) {
-      currentView.value = 'home'
-    }
+    currentView.value = 'home'
+    syncSubInput()
+  } catch (error) {
+    settingsError.value = error instanceof Error ? error.message : '读取书签文件失败'
   } finally {
     saving.value = false
   }
@@ -269,7 +280,13 @@ function resetSettings() {
 
 // 允许用户在设置页用当前输入值手动试读，不强制先保存。
 function reloadFromSettings(nextPath: string) {
-  loadBookmarks(nextPath, 'settings')
+  settingsError.value = ''
+
+  try {
+    applyBookmarkLoadResult(validateChromeBookmarks(nextPath))
+  } catch (error) {
+    settingsError.value = error instanceof Error ? error.message : '读取书签文件失败'
+  }
 }
 
 // 设置页的展示开关即时持久化，首页读取的是同一份本地状态。
