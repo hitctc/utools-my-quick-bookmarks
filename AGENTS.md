@@ -11,6 +11,13 @@
 - 让协作者明确哪些地方还是模板示例，避免把“未来目标”和“当前实现”混在一起。
 - 让 `AGENTS.md` 跟着代码一起维护，不变成只在第一次初始化时有用的静态说明。
 
+官方开发文档入口：
+
+- 快速开始：[`https://www.u-tools.cn/docs/developer/basic/getting-started.html`](https://www.u-tools.cn/docs/developer/basic/getting-started.html)
+- 开发者文档总入口：[`https://www.u-tools.cn/docs/developer/`](https://www.u-tools.cn/docs/developer/)
+
+后续凡是涉及 `uTools API`、`plugin.json`、`preload`、接入开发、打包、发布、部署配置、启动方式等问题，优先查官方开发文档，不凭记忆臆断。
+
 ## 2. 项目当前定位
 
 - 项目名称：`utools-my-quick-bookmarks`
@@ -92,6 +99,30 @@
 - `public/plugin.json` 的 `development.main` 已指向这个地址
 - uTools 实际加载时依赖 `dist/plugin.json`，因此首次本地联调前通常要先跑一次 `npm run build`
 - 构建完成后，可把 `dist/` 作为 uTools 插件目录加载；开发态会根据 `development.main` 自动转向本地 Vite 服务
+
+当前项目的开发 / 预览 / 调试方式：
+
+1. 首次安装依赖：`npm install`
+2. 启动前端开发服务：`npm run dev`
+3. 打开 `uTools 开发者工具`，在项目里选择本仓库的 `public/plugin.json`
+4. 点击 `接入开发`
+5. 在 uTools 中打开这个插件应用，此时会走 `public/plugin.json` 里的 `development.main`，直接加载本地 Vite 页面
+6. 改 `src/` 下的前端代码时，Vite 会热更新，回到插件窗口即可看到界面变化
+7. 改 `public/preload/services.js` 或 `public/plugin.json` 时，不要只依赖热更新；按官方调试文档做一次重新进入插件，必要时在 uTools 开发者工具里开启“退出到后台立即结束运行”
+8. 需要看控制台、报错、网络请求或 DOM 时，进入插件后点击右上角应用 Logo 打开 `开发者工具`，或使用官方文档中说明的快捷键打开
+
+当前项目的构建预览方式：
+
+1. 运行 `npm run build`
+2. 确认产物已经生成到 `dist/`
+3. 在 uTools 开发者工具中选择构建后的 `dist/plugin.json` 对应产物进行接入或验证
+
+文档优先级约定：
+
+- 查“怎么接入开发、怎么调试、热更新为何不生效”，优先看官方“快速开始 / 第一个插件应用 / 调试插件应用”
+- 查 `window.utools` 能力、生命周期、数据存储、动态指令等，优先看官方 API 文档
+- 查 `plugin.json` 字段语义，优先看官方 `plugin.json 核心配置文件说明`
+- 查 `preload` 能力边界和 Node.js 接入方式，优先看官方 `preload` 文档
 
 当前推荐验证顺序：
 
