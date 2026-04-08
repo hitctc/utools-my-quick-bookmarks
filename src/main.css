@@ -593,7 +593,7 @@ a {
 
 .bookmark-card__open:hover .bookmark-cover,
 .bookmark-card__open:focus-visible .bookmark-cover {
-  border-color: var(--text-primary);
+  border-color: var(--accent);
   background: var(--surface-raised);
 }
 
@@ -614,7 +614,7 @@ a {
 }
 
 .bookmark-cover--active {
-  border-color: var(--text-primary);
+  border-color: var(--accent);
   background: var(--surface-raised);
 }
 
