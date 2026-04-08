@@ -9,5 +9,9 @@ export function resolveThemeMode(themeMode, prefersDark) {
 }
 
 export function formatThemeStatus(themeMode, resolvedTheme) {
-  return `${String(themeMode || 'system').toUpperCase()} / ${String(resolvedTheme || 'light').toUpperCase()}`
+  if (themeMode === 'dark' || themeMode === 'light') {
+    return themeMode.toUpperCase()
+  }
+
+  return `SYSTEM / ${String(resolvedTheme || 'light').toUpperCase()}`
 }

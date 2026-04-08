@@ -23,3 +23,8 @@ test('resolveThemeMode maps system theme mode from prefersDark', () => {
 test('formatThemeStatus renders the selected mode and resolved theme', () => {
   assert.equal(formatThemeStatus('system', 'dark'), 'SYSTEM / DARK')
 })
+
+test('formatThemeStatus keeps explicit theme modes as a single label', () => {
+  assert.equal(formatThemeStatus('dark', 'dark'), 'DARK')
+  assert.equal(formatThemeStatus('light', 'light'), 'LIGHT')
+})
