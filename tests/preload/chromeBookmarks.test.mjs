@@ -5,11 +5,27 @@ import { createRequire } from 'node:module'
 const require = createRequire(import.meta.url)
 const {
   getDefaultChromeBookmarksPath,
+  getEffectiveChromeBookmarksPath,
   parseChromeBookmarksText,
 } = require('../../public/preload/chromeBookmarks.cjs')
 
 test('getDefaultChromeBookmarksPath returns macOS Chrome default bookmark path', () => {
   const result = getDefaultChromeBookmarksPath('/Users/demo')
+
+  assert.equal(
+    result,
+    '/Users/demo/Library/Application Support/Google/Chrome/Default/Bookmarks',
+  )
+})
+
+test('getEffectiveChromeBookmarksPath prefers saved path when non-empty', () => {
+  const result = getEffectiveChromeBookmarksPath('/Users/demo', '  /tmp/custom-bookmarks  ')
+
+  assert.equal(result, '/tmp/custom-bookmarks')
+})
+
+test('getEffectiveChromeBookmarksPath falls back to default path when saved path is empty', () => {
+  const result = getEffectiveChromeBookmarksPath('/Users/demo', '   ')
 
   assert.equal(
     result,

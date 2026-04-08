@@ -13,6 +13,12 @@ function getDefaultChromeBookmarksPath(homeDir) {
   )
 }
 
+// 用户已保存路径存在时优先使用，否则回退到默认 Chrome 路径。
+function getEffectiveChromeBookmarksPath(homeDir, savedPath) {
+  const trimmed = typeof savedPath === 'string' ? savedPath.trim() : ''
+  return trimmed || getDefaultChromeBookmarksPath(homeDir)
+}
+
 // 递归展开 Chrome 书签树，只保留真正的 url 叶子节点。
 function flattenNodes(nodes, sourceRoot, folderPath = []) {
   if (!Array.isArray(nodes) || nodes.length === 0) {
@@ -63,5 +69,6 @@ function parseChromeBookmarksText(text) {
 
 module.exports = {
   getDefaultChromeBookmarksPath,
+  getEffectiveChromeBookmarksPath,
   parseChromeBookmarksText,
 }
