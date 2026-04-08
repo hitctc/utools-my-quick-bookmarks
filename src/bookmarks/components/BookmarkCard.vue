@@ -20,7 +20,7 @@ const emit = defineEmits<{
   (event: 'toggle-pin', item: BookmarkCardItem): void
 }>()
 
-const pinButtonLabel = computed(() => (props.item.isPinned ? '取消置顶' : '置顶'))
+const pinButtonLabel = computed(() => (props.item.isPinned ? '[ UNPIN ]' : '[ PIN ]'))
 
 function formatFolderPath(folderPath: string[]) {
   if (!Array.isArray(folderPath) || folderPath.length === 0) {

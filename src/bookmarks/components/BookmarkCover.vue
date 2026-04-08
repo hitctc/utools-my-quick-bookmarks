@@ -29,24 +29,13 @@ const siteLabel = computed(() => {
   }
 })
 
-const coverStyle = computed(() => {
-  const seed = `${props.url}|${props.title}|${props.folderLabel}|${props.sourceRoot}`
-  let hash = 0
-  for (let index = 0; index < seed.length; index += 1) {
-    hash = (hash * 31 + seed.charCodeAt(index)) % 1000
-  }
+const statusLabel = computed(() => (props.isPinned ? 'PINNED' : 'READY'))
 
-  return {
-    backgroundColor: `hsl(0, 0%, ${active ? 92 - (hash % 3) : 95 - (hash % 4)}%)`,
-    borderColor: `hsl(0, 0%, ${active ? 76 - (hash % 4) : 84 - (hash % 5)}%)`,
-  }
-})
-
-const statusLabel = computed(() => (props.isPinned ? '已置顶' : '普通'))
+const openCountLabel = computed(() => `OPEN ${props.openCount}`)
 </script>
 
 <template>
-  <div class="bookmark-cover" :class="{ 'bookmark-cover--active': active }" :style="coverStyle">
+  <div class="bookmark-cover" :class="{ 'bookmark-cover--active': active }">
     <div class="bookmark-cover__top">
       <BookmarkAvatar :title="title" :url="url" :size="40" />
       <div class="bookmark-cover__meta">
@@ -63,7 +52,7 @@ const statusLabel = computed(() => (props.isPinned ? '已置顶' : '普通'))
     <div class="bookmark-cover__footer">
       <span class="bookmark-cover__folder">目录：{{ folderLabel }}</span>
       <div class="bookmark-cover__footer-stats" style="display: flex; align-items: center; gap: 8px;">
-        <span v-if="showOpenCount" class="bookmark-cover__count">{{ openCount }} 次</span>
+        <span v-if="showOpenCount && openCount > 0" class="bookmark-cover__count">{{ openCountLabel }}</span>
         <span class="bookmark-cover__chip" :class="{ 'bookmark-cover__chip--active': isPinned }">
           {{ statusLabel }}
         </span>
