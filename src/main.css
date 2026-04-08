@@ -2,42 +2,32 @@
 
 :root {
   color-scheme: light;
-  --page-bg: #ecebe7;
-  --surface-1: #f7f7f4;
-  --surface-2: #ffffff;
-  --surface-inset: #efeee9;
-  --text-1: #111111;
-  --text-2: #4f4f4f;
-  --text-3: #767676;
-  --line: #d8d7d1;
-  --line-strong: #9d9d95;
-  --accent: #111111;
-  --accent-soft: #e8e8e2;
+  --bg: #ecebe7;
+  --surface: #f7f7f4;
+  --surface-raised: #ffffff;
+  --border: #d8d7d1;
+  --border-visible: #d71921;
+  --text-disabled: #767676;
+  --text-secondary: #4f4f4f;
+  --text-primary: #111111;
+  --text-display: #111111;
+  --accent: #d71921;
   --danger: #8d2f2f;
-  --focus: #111111;
-  --chip-bg: #efeee9;
-  --chip-active-bg: #111111;
-  --chip-active-text: #f7f7f4;
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --page-bg: #0b0b0b;
-  --surface-1: #151515;
-  --surface-2: #1b1b1b;
-  --surface-inset: #202020;
-  --text-1: #f5f5f2;
-  --text-2: #c0c0b8;
-  --text-3: #8f8f87;
-  --line: #2b2b2b;
-  --line-strong: #484848;
-  --accent: #f5f5f2;
-  --accent-soft: #202020;
+  --bg: #0b0b0b;
+  --surface: #151515;
+  --surface-raised: #1b1b1b;
+  --border: #2b2b2b;
+  --border-visible: #d71921;
+  --text-disabled: #8f8f87;
+  --text-secondary: #c0c0b8;
+  --text-primary: #f5f5f2;
+  --text-display: #f5f5f2;
+  --accent: #d71921;
   --danger: #ff8b8b;
-  --focus: #f5f5f2;
-  --chip-bg: #202020;
-  --chip-active-bg: #f5f5f2;
-  --chip-active-text: #111111;
 }
 
 * {
@@ -52,9 +42,9 @@ body,
 
 body {
   margin: 0;
-  color: var(--text-1);
+  color: var(--text-primary);
   font-family: "Space Grotesk", "PingFang SC", "Helvetica Neue", sans-serif;
-  background: var(--page-bg);
+  background: var(--bg);
   text-rendering: optimizeLegibility;
 }
 
@@ -76,7 +66,7 @@ a {
 }
 
 :focus-visible {
-  outline: 1px solid var(--focus);
+  outline: 1px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -96,23 +86,23 @@ a {
 .bookmarks-section,
 .settings-panel,
 .search-tip-card {
-  background: var(--surface-1);
-  border: 1px solid var(--line);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 22px;
   box-shadow: none;
 }
 
 .hero {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.85fr);
+  align-items: start;
+  gap: 18px 24px;
   padding: 28px;
 }
 
 .hero--nothing {
-  background: var(--surface-2);
-  border-color: var(--line-strong);
+  background: var(--surface-raised);
+  border-color: var(--border-visible);
 }
 
 .hero__lead {
@@ -131,7 +121,7 @@ a {
 
 .hero__number {
   margin: 0;
-  color: var(--text-1);
+  color: var(--text-primary);
   font-family: "Doto", "Space Mono", monospace;
   font-size: clamp(4rem, 9vw, 6.5rem);
   font-weight: 700;
@@ -148,7 +138,7 @@ a {
 .hero__text {
   margin: 0;
   max-width: 48ch;
-  color: var(--text-2);
+  color: var(--text-secondary);
   line-height: 1.65;
 }
 
@@ -169,7 +159,7 @@ a {
 
 .hero__path-label {
   margin: 0;
-  color: var(--text-3);
+  color: var(--text-disabled);
   font-family: "Space Mono", monospace;
   font-size: 11px;
   letter-spacing: 0.18em;
@@ -179,7 +169,7 @@ a {
 .hero__path {
   margin: 0;
   max-width: 34ch;
-  color: var(--text-1);
+  color: var(--text-primary);
   font-family: "Space Mono", monospace;
   font-size: 13px;
   line-height: 1.6;
@@ -209,7 +199,7 @@ a {
 .bookmarks-section__eyebrow,
 .mono-label {
   margin: 0;
-  color: var(--text-3);
+  color: var(--text-disabled);
   font-family: "Space Mono", monospace;
   font-size: 11px;
   font-weight: 700;
@@ -228,7 +218,7 @@ a {
 .state-strip__copy,
 .hero__text {
   margin: 0;
-  color: var(--text-2);
+  color: var(--text-secondary);
   line-height: 1.6;
 }
 
@@ -237,10 +227,10 @@ a {
   align-items: center;
   min-height: 30px;
   padding: 0 10px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 999px;
-  background: var(--chip-bg);
-  color: var(--text-1);
+  background: var(--surface-raised);
+  color: var(--text-primary);
   font-family: "Space Mono", monospace;
   font-size: 11px;
   line-height: 1;
@@ -249,8 +239,8 @@ a {
 }
 
 .status-chip--muted {
-  color: var(--text-2);
-  background: var(--surface-inset);
+  color: var(--text-secondary);
+  background: transparent;
 }
 
 .technical-button {
@@ -259,10 +249,10 @@ a {
   justify-content: center;
   min-height: 40px;
   padding: 0 14px;
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--border-visible);
   border-radius: 999px;
-  background: var(--surface-2);
-  color: var(--text-1);
+  background: transparent;
+  color: var(--text-primary);
   font-family: "Space Mono", monospace;
   font-size: 12px;
   letter-spacing: 0.12em;
@@ -270,8 +260,8 @@ a {
 }
 
 .technical-button:hover {
-  background: var(--surface-inset);
-  border-color: var(--line-strong);
+  background: var(--surface-raised);
+  border-color: var(--accent);
 }
 
 .status-chip,
@@ -289,8 +279,8 @@ a {
 .icon-button,
 .secondary-button,
 .text-button {
-  background: var(--surface-2);
-  color: var(--text-1);
+  background: var(--surface-raised);
+  color: var(--text-primary);
 }
 
 .icon-button,
@@ -298,7 +288,7 @@ a {
 .secondary-button {
   min-height: 44px;
   padding: 0 18px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 999px;
 }
 
@@ -309,11 +299,11 @@ a {
 .primary-button {
   background: var(--accent);
   border-color: var(--accent);
-  color: var(--surface-2);
+  color: var(--bg);
 }
 
 .secondary-button {
-  background: var(--surface-2);
+  background: var(--surface-raised);
 }
 
 .text-button {
@@ -326,14 +316,14 @@ a {
 .primary-button:hover,
 .secondary-button:hover,
 .text-button:hover {
-  background: var(--surface-inset);
-  border-color: var(--line-strong);
+  background: var(--surface-raised);
+  border-color: var(--accent);
 }
 
 .primary-button:hover {
-  background: var(--text-2);
-  border-color: var(--text-2);
-  color: var(--surface-2);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
 }
 
 .icon-button:disabled,
@@ -353,7 +343,7 @@ a {
 }
 
 .summary-card--wide {
-  background: var(--surface-2);
+  background: var(--surface-raised);
 }
 
 .summary-copy {
@@ -365,14 +355,14 @@ a {
   gap: 4px;
   min-width: 108px;
   padding: 12px 16px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 18px;
-  background: var(--surface-2);
+  background: var(--surface-raised);
   text-align: right;
 }
 
 .summary-pill span {
-  color: var(--text-3);
+  color: var(--text-disabled);
   font-size: 12px;
 }
 
@@ -391,19 +381,19 @@ a {
   justify-content: space-between;
   gap: 14px;
   padding: 14px 16px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 18px;
-  background: var(--surface-2);
+  background: var(--surface-raised);
 }
 
 .state-strip--active {
-  border-color: var(--line-strong);
-  background: var(--surface-1);
+  border-color: var(--accent);
+  background: var(--surface);
 }
 
 .state-strip__label {
   margin: 0;
-  color: var(--text-3);
+  color: var(--text-disabled);
   font-family: "Space Mono", monospace;
   font-size: 11px;
   letter-spacing: 0.18em;
@@ -438,10 +428,10 @@ a {
   min-width: 42px;
   min-height: 28px;
   padding: 0 10px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 999px;
-  background: var(--surface-2);
-  color: var(--text-1);
+  background: var(--surface-raised);
+  color: var(--text-primary);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -457,13 +447,13 @@ a {
 .search-tip-card {
   padding: 18px 20px;
   border-radius: 20px;
-  background: var(--surface-2);
+  background: var(--surface-raised);
   border-style: dashed;
 }
 
 .search-tip-card--searching {
-  background: var(--accent-soft);
-  border-color: var(--line-strong);
+  background: var(--surface-raised);
+  border-color: var(--accent);
 }
 
 .search-tip-card__title,
@@ -477,7 +467,7 @@ a {
 
 .search-tip-card__copy {
   margin-top: 6px;
-  color: var(--text-2);
+  color: var(--text-secondary);
   line-height: 1.6;
 }
 
@@ -492,18 +482,18 @@ a {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   padding: 6px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: var(--surface-inset);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-raised);
 }
 
 .segmented-control__button {
   min-height: 38px;
   padding: 0 14px;
   border: 1px solid transparent;
-  border-radius: 12px;
+  border-radius: 999px;
   background: transparent;
-  color: var(--text-2);
+  color: var(--text-secondary);
   font-family: "Space Mono", monospace;
   font-size: 12px;
   letter-spacing: 0.08em;
@@ -511,15 +501,15 @@ a {
 }
 
 .segmented-control__button:hover {
-  background: var(--surface-2);
-  border-color: var(--line);
-  color: var(--text-1);
+  background: var(--surface-raised);
+  border-color: var(--accent);
+  color: var(--text-primary);
 }
 
 .segmented-control__button--active {
-  background: var(--surface-2);
-  border-color: var(--line-strong);
-  color: var(--text-1);
+  background: var(--text-display);
+  border-color: var(--accent);
+  color: var(--bg);
 }
 
 .bookmarks-section__header,
@@ -548,8 +538,8 @@ a {
 }
 
 .bookmark-card--active .bookmark-cover {
-  border-color: var(--line-strong);
-  background: var(--surface-2);
+  border-color: var(--accent);
+  background: var(--surface-raised);
 }
 
 .bookmark-card__pin {
@@ -562,24 +552,24 @@ a {
   gap: 6px;
   min-height: 32px;
   padding: 0 10px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 999px;
-  background: var(--surface-2);
-  color: var(--text-1);
+  background: var(--surface-raised);
+  color: var(--text-primary);
   font-family: "Space Mono", monospace;
   font-size: 11px;
   letter-spacing: 0.08em;
 }
 
 .bookmark-card__pin:hover {
-  background: var(--surface-inset);
-  border-color: var(--line-strong);
+  background: var(--surface-raised);
+  border-color: var(--accent);
 }
 
 .bookmark-card__pin--active {
-  background: var(--chip-active-bg);
-  border-color: var(--chip-active-bg);
-  color: var(--chip-active-text);
+  background: var(--text-display);
+  border-color: var(--accent);
+  color: var(--bg);
 }
 
 .bookmark-card__pin-icon {
@@ -601,8 +591,8 @@ a {
 
 .bookmark-card__open:hover .bookmark-cover,
 .bookmark-card__open:focus-visible .bookmark-cover {
-  border-color: var(--line-strong);
-  background: var(--surface-2);
+  border-color: var(--accent);
+  background: var(--surface-raised);
 }
 
 .bookmark-card__open:focus-visible {
@@ -616,14 +606,14 @@ a {
   min-height: 228px;
   padding: 18px;
   overflow: hidden;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 20px;
-  background: var(--surface-1);
+  background: var(--surface);
 }
 
 .bookmark-cover--active {
-  border-color: var(--line-strong);
-  background: var(--surface-2);
+  border-color: var(--accent);
+  background: var(--surface-raised);
 }
 
 .bookmark-cover__overlay {
@@ -644,7 +634,7 @@ a {
 }
 
 .bookmark-cover__root {
-  color: var(--text-3);
+  color: var(--text-disabled);
   font-family: "Space Mono", monospace;
   font-size: 11px;
   font-weight: 700;
@@ -653,7 +643,7 @@ a {
 }
 
 .bookmark-cover__site {
-  color: var(--text-2);
+  color: var(--text-secondary);
   font-family: "Space Grotesk", "PingFang SC", "Helvetica Neue", sans-serif;
   font-size: 13px;
   font-weight: 500;
@@ -673,7 +663,7 @@ a {
 .bookmark-cover__title {
   display: -webkit-box;
   overflow: hidden;
-  color: var(--text-1);
+  color: var(--text-primary);
   font-size: 18px;
   line-height: 1.35;
   font-weight: 700;
@@ -682,14 +672,14 @@ a {
 }
 
 .bookmark-cover__url {
-  color: var(--text-2);
+  color: var(--text-secondary);
   font-family: "Space Mono", monospace;
   font-size: 12px;
   word-break: break-all;
 }
 
 .bookmark-cover__folder {
-  color: var(--text-3);
+  color: var(--text-disabled);
   font-family: "Space Mono", monospace;
   font-size: 12px;
 }
@@ -704,19 +694,19 @@ a {
   align-items: center;
   min-height: 28px;
   padding: 0 10px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 999px;
-  background: var(--surface-2);
-  color: var(--text-2);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
   font-family: "Space Mono", monospace;
   font-size: 12px;
   font-weight: 700;
 }
 
 .bookmark-cover__chip--active {
-  background: var(--chip-active-bg);
-  border-color: var(--chip-active-bg);
-  color: var(--chip-active-text);
+  background: var(--text-display);
+  border-color: var(--accent);
+  color: var(--bg);
 }
 
 .bookmark-cover__count {
@@ -726,10 +716,10 @@ a {
   min-width: 28px;
   min-height: 28px;
   padding: 0 8px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 999px;
-  background: var(--surface-2);
-  color: var(--text-1);
+  background: var(--surface-raised);
+  color: var(--text-primary);
   font-family: "Space Mono", monospace;
   font-size: 12px;
   font-weight: 700;
@@ -742,10 +732,10 @@ a {
   flex: 0 0 auto;
   min-width: 44px;
   min-height: 44px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 14px;
-  background: var(--surface-2);
-  color: var(--text-1);
+  background: var(--surface-raised);
+  color: var(--text-primary);
 }
 
 .bookmark-avatar__letter {
@@ -772,14 +762,14 @@ a {
 .path-input {
   width: 100%;
   padding: 14px 16px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 16px;
-  background: var(--surface-2);
-  color: var(--text-1);
+  background: var(--surface-raised);
+  color: var(--text-primary);
 }
 
 .path-input::placeholder {
-  color: var(--text-3);
+  color: var(--text-disabled);
 }
 
 .actions-row {
@@ -801,9 +791,9 @@ a {
   justify-content: space-between;
   gap: 16px;
   padding: 14px 16px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 18px;
-  background: var(--surface-2);
+  background: var(--surface-raised);
 }
 
 .settings-toggle strong,
@@ -813,7 +803,7 @@ a {
 
 .settings-toggle small {
   margin-top: 4px;
-  color: var(--text-2);
+  color: var(--text-secondary);
   line-height: 1.5;
 }
 
@@ -833,8 +823,11 @@ a {
   .summary-card,
   .bookmarks-section__header,
   .settings-header {
-    flex-direction: column;
     align-items: stretch;
+  }
+
+  .hero {
+    grid-template-columns: 1fr;
   }
 
   .hero__side {
