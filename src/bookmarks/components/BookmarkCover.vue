@@ -23,7 +23,12 @@ const sourceRootLabel = computed(() => SOURCE_ROOT_LABELS[props.sourceRoot] ?? p
 
 const siteLabel = computed(() => {
   try {
-    return new URL(props.url).host
+    const parsedUrl = new URL(props.url)
+    if (parsedUrl.host) {
+      return parsedUrl.host
+    }
+
+    return parsedUrl.protocol.replace(/:$/, '') || props.url
   } catch {
     return props.url
   }

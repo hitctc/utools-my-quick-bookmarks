@@ -51,12 +51,13 @@ function handleTogglePin(event: MouseEvent) {
       :class="{ 'bookmark-card__pin--active': item.isPinned }"
       :title="pinButtonLabel"
       :aria-label="pinButtonLabel"
+      @keydown.enter.stop
       @click="handleTogglePin"
     >
       <span class="bookmark-card__pin-text">{{ pinButtonLabel }}</span>
     </button>
 
-    <button type="button" class="bookmark-card__open" @click="handleOpen">
+    <button type="button" class="bookmark-card__open" @keydown.enter.stop @click="handleOpen">
       <BookmarkCover
         :title="item.title"
         :url="item.url"
