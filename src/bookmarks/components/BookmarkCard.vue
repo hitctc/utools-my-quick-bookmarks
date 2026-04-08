@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { computed } from 'vue'
 import BookmarkCover from './BookmarkCover.vue'
 import type { BookmarkCardItem } from '../types'
 
@@ -18,6 +19,8 @@ const emit = defineEmits<{
   (event: 'open', item: BookmarkCardItem): void
   (event: 'toggle-pin', item: BookmarkCardItem): void
 }>()
+
+const pinButtonLabel = computed(() => (props.item.isPinned ? '取消置顶' : '置顶'))
 
 function formatFolderPath(folderPath: string[]) {
   if (!Array.isArray(folderPath) || folderPath.length === 0) {
@@ -46,12 +49,11 @@ function handleTogglePin(event: MouseEvent) {
       type="button"
       class="bookmark-card__pin"
       :class="{ 'bookmark-card__pin--active': item.isPinned }"
-      :title="item.isPinned ? '取消置顶' : '置顶书签'"
-      :aria-label="item.isPinned ? '取消置顶' : '置顶书签'"
+      :title="pinButtonLabel"
+      :aria-label="pinButtonLabel"
       @click="handleTogglePin"
     >
-      <span class="bookmark-card__pin-icon">⌖</span>
-      <span class="bookmark-card__pin-text">{{ item.isPinned ? '已置顶' : '置顶' }}</span>
+      <span class="bookmark-card__pin-text">{{ pinButtonLabel }}</span>
     </button>
 
     <button type="button" class="bookmark-card__open" @click="handleOpen">
