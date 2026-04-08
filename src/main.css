@@ -6,12 +6,13 @@
   --surface: #f7f7f4;
   --surface-raised: #ffffff;
   --border: #d8d7d1;
-  --border-visible: #d71921;
+  --border-visible: #cccccc;
   --text-disabled: #767676;
   --text-secondary: #4f4f4f;
   --text-primary: #111111;
   --text-display: #111111;
   --accent: #d71921;
+  --accent-soft: #e8e8e2;
   --danger: #8d2f2f;
 }
 
@@ -21,12 +22,13 @@
   --surface: #151515;
   --surface-raised: #1b1b1b;
   --border: #2b2b2b;
-  --border-visible: #d71921;
+  --border-visible: #333333;
   --text-disabled: #8f8f87;
   --text-secondary: #c0c0b8;
   --text-primary: #f5f5f2;
   --text-display: #f5f5f2;
   --accent: #d71921;
+  --accent-soft: #202020;
   --danger: #ff8b8b;
 }
 
@@ -88,7 +90,7 @@ a {
 .search-tip-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 22px;
+  border-radius: 16px;
   box-shadow: none;
 }
 
@@ -101,7 +103,7 @@ a {
 }
 
 .hero--nothing {
-  background: var(--surface-raised);
+  background: var(--surface);
   border-color: var(--border-visible);
 }
 
@@ -247,7 +249,7 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 14px;
   border: 1px solid var(--border-visible);
   border-radius: 999px;
@@ -260,8 +262,8 @@ a {
 }
 
 .technical-button:hover {
-  background: var(--surface-raised);
-  border-color: var(--accent);
+  background: transparent;
+  border-color: var(--text-primary);
 }
 
 .status-chip,
@@ -279,7 +281,7 @@ a {
 .icon-button,
 .secondary-button,
 .text-button {
-  background: var(--surface-raised);
+  background: transparent;
   color: var(--text-primary);
 }
 
@@ -288,7 +290,7 @@ a {
 .secondary-button {
   min-height: 44px;
   padding: 0 18px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-visible);
   border-radius: 999px;
 }
 
@@ -297,13 +299,11 @@ a {
 }
 
 .primary-button {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--bg);
+  background: transparent;
 }
 
 .secondary-button {
-  background: var(--surface-raised);
+  background: transparent;
 }
 
 .text-button {
@@ -316,14 +316,15 @@ a {
 .primary-button:hover,
 .secondary-button:hover,
 .text-button:hover {
-  background: var(--surface-raised);
-  border-color: var(--accent);
+  background: transparent;
+  border-color: var(--text-primary);
+  color: var(--text-primary);
 }
 
 .primary-button:hover {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--bg);
+  background: transparent;
+  border-color: var(--text-primary);
+  color: var(--text-primary);
 }
 
 .icon-button:disabled,
@@ -356,7 +357,7 @@ a {
   min-width: 108px;
   padding: 12px 16px;
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: 16px;
   background: var(--surface-raised);
   text-align: right;
 }
@@ -382,7 +383,7 @@ a {
   gap: 14px;
   padding: 14px 16px;
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: 16px;
   background: var(--surface-raised);
 }
 
@@ -446,13 +447,13 @@ a {
 
 .search-tip-card {
   padding: 18px 20px;
-  border-radius: 20px;
+  border-radius: 16px;
   background: var(--surface-raised);
   border-style: dashed;
 }
 
 .search-tip-card--searching {
-  background: var(--surface-raised);
+  background: var(--accent-soft);
   border-color: var(--accent);
 }
 
@@ -475,6 +476,7 @@ a {
   display: grid;
   gap: 16px;
   padding: 20px;
+  border-radius: 16px;
 }
 
 .segmented-control {
@@ -482,7 +484,7 @@ a {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   padding: 6px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-visible);
   border-radius: 999px;
   background: var(--surface-raised);
 }
@@ -563,7 +565,7 @@ a {
 
 .bookmark-card__pin:hover {
   background: var(--surface-raised);
-  border-color: var(--accent);
+  border-color: var(--text-primary);
 }
 
 .bookmark-card__pin--active {
@@ -591,7 +593,7 @@ a {
 
 .bookmark-card__open:hover .bookmark-cover,
 .bookmark-card__open:focus-visible .bookmark-cover {
-  border-color: var(--accent);
+  border-color: var(--text-primary);
   background: var(--surface-raised);
 }
 
@@ -607,12 +609,12 @@ a {
   padding: 18px;
   overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: 16px;
   background: var(--surface);
 }
 
 .bookmark-cover--active {
-  border-color: var(--accent);
+  border-color: var(--text-primary);
   background: var(--surface-raised);
 }
 
@@ -762,7 +764,7 @@ a {
 .path-input {
   width: 100%;
   padding: 14px 16px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-visible);
   border-radius: 16px;
   background: var(--surface-raised);
   color: var(--text-primary);
@@ -791,7 +793,7 @@ a {
   justify-content: space-between;
   gap: 16px;
   padding: 14px 16px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-visible);
   border-radius: 18px;
   background: var(--surface-raised);
 }
