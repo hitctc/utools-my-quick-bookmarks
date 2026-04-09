@@ -57,29 +57,30 @@ export function getBookmarkFolderLabel(folderPath) {
   return labels.length ? labels.join(' / ') : '未分类'
 }
 
-// 把 URL 的 pathname 提炼成站点路径，首页用它表示书签在网站里的位置。
-export function getBookmarkPathLabel(url) {
-  const text = toSafeText(url).trim()
-
-  if (!text) {
-    return '未定位'
+function getBookmarkRootLabel(sourceRoot) {
+  if (sourceRoot === 'bookmark_bar') {
+    return '书签栏'
   }
 
-  function formatPathname(pathname) {
-    const segments = toSafeText(pathname)
-      .split('/')
-      .map(segment => segment.trim())
-      .filter(Boolean)
-
-    return segments.length ? segments.join(' / ') : '首页'
+  if (sourceRoot === 'other') {
+    return '其他书签'
   }
 
-  try {
-    const parsedUrl = new URL(text)
-    return formatPathname(parsedUrl.pathname)
-  } catch {
-    return text.startsWith('/') ? formatPathname(text) : '未定位'
+  if (sourceRoot === 'synced') {
+    return '已同步'
   }
+
+  return '未分类'
+}
+
+// 把 Chrome 书签真实目录路径格式化成可读文案，保留根目录和文件夹层级。
+export function getBookmarkPathLabel(folderPath, sourceRoot) {
+  const rootLabel = getBookmarkRootLabel(sourceRoot)
+  const labels = Array.isArray(folderPath)
+    ? folderPath.map(segment => toSafeText(segment).trim()).filter(Boolean)
+    : []
+
+  return [rootLabel, ...labels].join('/')
 }
 
 // 按 token 做大小写不敏感高亮，返回带 matched 标记的连续片段。
@@ -149,7 +150,7 @@ export function getBookmarkSearchMeta(item, tokens) {
   const url = toSafeText(item?.url).trim()
   const folderLabel = getBookmarkFolderLabel(item?.folderPath)
   const siteLabel = getBookmarkSiteLabel(url)
-  const pathLabel = getBookmarkPathLabel(url)
+  const pathLabel = getBookmarkPathLabel(item?.folderPath, item?.sourceRoot)
 
   const tokenMatches = searchTokens.map(token => ({
     token,
