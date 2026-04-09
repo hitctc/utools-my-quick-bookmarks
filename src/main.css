@@ -613,17 +613,11 @@ a {
 }
 
 .settings-floating-action {
-  position: absolute;
+  position: fixed;
   top: 18px;
-  left: 18px;
-  z-index: 4;
-}
-
-.settings-shell__label {
-  position: absolute;
-  top: 30px;
   right: 18px;
-  z-index: 3;
+  left: auto;
+  z-index: 8;
 }
 
 .settings-card {
@@ -747,11 +741,6 @@ a {
 
   .settings-floating-action {
     top: 16px;
-    left: 16px;
-  }
-
-  .settings-shell__label {
-    top: 28px;
     right: 16px;
   }
 

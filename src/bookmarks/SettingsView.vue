@@ -71,8 +71,6 @@ function emitThemeModeChange(themeMode: 'system' | 'dark' | 'light') {
       <span class="icon-button__label">首页</span>
     </button>
 
-    <p class="section-label settings-shell__label">设置</p>
-
     <section class="settings-card">
       <h1>Chrome 书签文件</h1>
       <p class="settings-copy">当前只支持 macOS 下的 Google Chrome 默认 profile。</p>
