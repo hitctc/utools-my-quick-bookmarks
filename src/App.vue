@@ -33,6 +33,16 @@ type BookmarkLoadResult = {
 type BookmarkUiSettingsPatch = Partial<BookmarkUiSettings>
 type PinnedBookmarkMap = Record<string, number>
 type RecentOpenedMap = Record<string, BookmarkRecentRecord>
+type BookmarkRefreshState = 'idle' | 'refreshing' | 'failed'
+type BookmarkRefreshOptions = {
+  nextPath?: string
+  targetView?: 'home' | 'settings'
+  blocking?: boolean
+}
+type SyncPersistedStateOptions = {
+  forceRefresh?: boolean
+  skipBookmarkRefresh?: boolean
+}
 const DEFAULT_WINDOW_HEIGHT = 640
 
 const currentView = ref<'home' | 'settings'>('home')
@@ -41,6 +51,7 @@ const items = ref<BookmarkItem[]>([])
 const total = ref(0)
 const loading = ref(false)
 const saving = ref(false)
+const refreshState = ref<BookmarkRefreshState>('idle')
 const homeError = ref('')
 const settingsError = ref('')
 const bootstrapped = ref(false)
@@ -56,6 +67,7 @@ const prefersDark = ref(false)
 const pinnedMap = ref<PinnedBookmarkMap>({})
 const recentOpenedMap = ref<RecentOpenedMap>({})
 const systemThemeQuery = ref<MediaQueryList | null>(null)
+let scheduledRefreshTimer: ReturnType<typeof globalThis.setTimeout> | null = null
 
 // 统一把底层解析结果整理成首页卡片模型，避免展示层重复拼字段。
 function normalizeBookmarkItem(item: BookmarkItem): BookmarkItem {
@@ -139,6 +151,71 @@ function applyBookmarkLoadResult(result: BookmarkLoadResult) {
   total.value = result.total
 }
 
+// 缓存命中时先恢复上一份成功结果，避免首页再次从整屏 loading 开始。
+function normalizeBookmarkCache(rawCache: unknown): BookmarkLoadResult | null {
+  if (!rawCache || typeof rawCache !== 'object') {
+    return null
+  }
+
+  const candidate = rawCache as Partial<BookmarkLoadResult>
+  if (!Array.isArray(candidate.items)) {
+    return null
+  }
+
+  const normalizedItems = candidate.items.map(normalizeBookmarkItem)
+  const resolvedTotal = Number(candidate.total)
+
+  return {
+    filePath: String(candidate.filePath ?? '').trim(),
+    total: Number.isFinite(resolvedTotal) ? resolvedTotal : normalizedItems.length,
+    items: normalizedItems,
+  }
+}
+
+// 缓存只负责首屏秒开，读不到或格式不对时直接忽略，别把异常带到展示层。
+function getBookmarkCache() {
+  try {
+    return normalizeBookmarkCache(window.services.getBookmarkCache())
+  } catch {
+    return null
+  }
+}
+
+// 每次读到最新书签都顺手覆盖缓存，保证下一次进入首页还能先看到结果。
+function saveBookmarkCache(result: BookmarkLoadResult) {
+  try {
+    window.services.saveBookmarkCache({
+      filePath: result.filePath,
+      total: result.total,
+      items: result.items.map(normalizeBookmarkItem),
+    })
+  } catch {
+    // 缓存写入失败不影响当前首页展示，这里保持静默。
+  }
+}
+
+// 如果缓存结构已经不可用，就主动清掉，避免下次继续命中脏数据。
+function clearBookmarkCache() {
+  try {
+    window.services.clearBookmarkCache()
+  } catch {
+    // 清缓存失败不会影响主流程，这里不额外打断首页。
+  }
+}
+
+// 只在真实书签结果变化时才替换页面，避免静默刷新造成无意义重渲染。
+function getBookmarkResultSignature(result: BookmarkLoadResult | null) {
+  if (!result) {
+    return ''
+  }
+
+  return JSON.stringify({
+    filePath: String(result.filePath || '').trim(),
+    total: Number(result.total || 0),
+    items: result.items.map(normalizeBookmarkItem),
+  })
+}
+
 // 先验证路径是否真的可读，再决定要不要把结果写进当前状态或持久化配置。
 function validateChromeBookmarks(nextPath: string) {
   return window.services.loadChromeBookmarks(nextPath) as BookmarkLoadResult
@@ -211,31 +288,93 @@ function handleWindowKeydown(event: KeyboardEvent) {
   }
 }
 
-// 统一根据路径加载书签，并把错误落到当前所在视图。
-function loadBookmarks(nextPath = bookmarkPath.value, targetView: 'home' | 'settings' = currentView.value) {
+// 首屏阻塞加载和首页静默刷新共用一套读取逻辑，只在无缓存时才真的挡住页面。
+function refreshBookmarks({
+  nextPath = bookmarkPath.value,
+  targetView = currentView.value,
+  blocking = false,
+}: BookmarkRefreshOptions = {}) {
   const errorRef = targetView === 'settings' ? settingsError : homeError
-  loading.value = true
-  errorRef.value = ''
+
+  if (blocking) {
+    loading.value = true
+    errorRef.value = ''
+  }
+
+  if (targetView === 'home') {
+    refreshState.value = 'refreshing'
+  }
 
   try {
-    applyBookmarkLoadResult(validateChromeBookmarks(nextPath))
+    const loaded = validateChromeBookmarks(nextPath)
+    const currentResult = {
+      filePath: bookmarkPath.value,
+      total: total.value,
+      items: items.value,
+    }
+
+    if (getBookmarkResultSignature(currentResult) !== getBookmarkResultSignature(loaded)) {
+      applyBookmarkLoadResult(loaded)
+      saveBookmarkCache(loaded)
+    }
+
+    if (targetView === 'settings') {
+      settingsError.value = ''
+    } else {
+      homeError.value = ''
+    }
+
+    refreshState.value = 'idle'
+    return true
   } catch (error) {
-    errorRef.value = error instanceof Error ? error.message : '读取书签文件失败'
-    items.value = []
-    total.value = 0
+    const message = error instanceof Error ? error.message : '读取书签文件失败'
+
+    if (blocking) {
+      errorRef.value = message
+      items.value = []
+      total.value = 0
+      refreshState.value = 'failed'
+      return false
+    }
+
+    if (targetView === 'settings') {
+      settingsError.value = message
+    } else {
+      refreshState.value = 'failed'
+    }
+
+    return false
   } finally {
-    loading.value = false
+    if (blocking) {
+      loading.value = false
+    }
   }
 }
 
+// 有缓存时把真实文件刷新延后到下一拍，让缓存结果先完成渲染再后台更新。
+function scheduleBookmarkRefresh(options: BookmarkRefreshOptions = {}) {
+  if (scheduledRefreshTimer) {
+    window.clearTimeout(scheduledRefreshTimer)
+  }
+
+  scheduledRefreshTimer = window.setTimeout(() => {
+    scheduledRefreshTimer = null
+    refreshBookmarks(options)
+  }, 0)
+}
+
 // 把 uTools 里持久化的设置统一同步到当前界面，云端拉新配置时也复用这一套入口。
-function syncPersistedState(targetView: 'home' | 'settings' = currentView.value) {
+function syncPersistedState(
+  targetView: 'home' | 'settings' = currentView.value,
+  options: SyncPersistedStateOptions = {},
+) {
   const settings = window.services.getBookmarkSettings() as { chromeBookmarksPath: string }
   const nextUiSettings = window.services.getBookmarkUiSettings() as BookmarkUiSettings
   const nextPinnedMap = window.services.getPinnedBookmarks() as PinnedBookmarkMap
   const nextRecentOpenedMap = window.services.getRecentOpenedBookmarks() as RecentOpenedMap
   const nextBookmarkPath = settings.chromeBookmarksPath
-  const shouldReloadBookmarks = nextBookmarkPath !== bookmarkPath.value || !items.value.length
+  const shouldReloadBookmarks =
+    Boolean(options.forceRefresh) || nextBookmarkPath !== bookmarkPath.value || !items.value.length
 
   uiSettings.value = nextUiSettings
   pinnedMap.value = nextPinnedMap
@@ -243,8 +382,16 @@ function syncPersistedState(targetView: 'home' | 'settings' = currentView.value)
   applyPluginWindowHeight(nextUiSettings.windowHeight)
   bookmarkPath.value = nextBookmarkPath
 
+  if (options.skipBookmarkRefresh) {
+    return
+  }
+
   if (shouldReloadBookmarks) {
-    loadBookmarks(nextBookmarkPath, targetView)
+    if (items.value.length) {
+      scheduleBookmarkRefresh({ nextPath: nextBookmarkPath, targetView })
+    } else {
+      refreshBookmarks({ nextPath: nextBookmarkPath, targetView, blocking: true })
+    }
   }
 }
 
@@ -255,14 +402,34 @@ function initializeApp() {
   settingsError.value = ''
   searchQuery.value = ''
   highlightedIndex.value = 0
+  refreshState.value = 'idle'
 
   if (!window.utools || !window.services) {
     homeError.value = '请通过 uTools 接入开发模式打开当前插件'
     return
   }
 
-  syncPersistedState('home')
+  syncPersistedState('home', { skipBookmarkRefresh: true })
+  const cachedResult = getBookmarkCache()
+
+  if (cachedResult && cachedResult.filePath === bookmarkPath.value) {
+    applyBookmarkLoadResult(cachedResult)
+  } else {
+    if (cachedResult) {
+      clearBookmarkCache()
+    }
+    items.value = []
+    total.value = 0
+  }
+
   bootstrapped.value = true
+
+  if (items.value.length) {
+    scheduleBookmarkRefresh({ nextPath: bookmarkPath.value, targetView: 'home' })
+  } else {
+    refreshBookmarks({ nextPath: bookmarkPath.value, targetView: 'home', blocking: true })
+  }
+
   syncSubInput()
 }
 
@@ -275,6 +442,8 @@ function saveSettings(nextPath: string) {
     const loaded = validateChromeBookmarks(nextPath)
     const settings = window.services.saveBookmarkSettings(loaded.filePath) as { chromeBookmarksPath: string }
     applyBookmarkLoadResult(loaded)
+    saveBookmarkCache(loaded)
+    refreshState.value = 'idle'
     bookmarkPath.value = settings.chromeBookmarksPath
     currentView.value = 'home'
     syncSubInput()
@@ -304,6 +473,7 @@ function reloadFromSettings(nextPath: string) {
 
   try {
     applyBookmarkLoadResult(validateChromeBookmarks(nextPath))
+    refreshState.value = 'idle'
   } catch (error) {
     settingsError.value = error instanceof Error ? error.message : '读取书签文件失败'
   }
@@ -331,6 +501,7 @@ function openSettingsView() {
 // 从设置页返回首页时也走统一切换入口，避免状态和滚动分叉。
 function backToHome() {
   currentView.value = 'home'
+  syncPersistedState('home', { forceRefresh: true })
 }
 
 // 置顶只影响插件内展示顺序，不会改 Chrome 源书签文件。
@@ -349,12 +520,27 @@ function handleOpenBookmark(item: BookmarkCardItem) {
   }
 }
 
+// 手动刷新沿用首页同一份状态流，避免额外分叉出第二套书签读取逻辑。
+function refreshHomeBookmarks() {
+  if (loading.value || refreshState.value === 'refreshing') {
+    return
+  }
+
+  refreshBookmarks({
+    nextPath: bookmarkPath.value,
+    targetView: 'home',
+    blocking: !items.value.length,
+  })
+}
+
 const themeMode = computed<BookmarkThemeMode>(() => uiSettings.value.themeMode)
 const resolvedTheme = computed<BookmarkResolvedTheme>(() =>
   resolveThemeMode(themeMode.value, prefersDark.value),
 )
 const themeStatus = computed(() => formatThemeStatus(themeMode.value, resolvedTheme.value))
 const searchTokens = computed(() => normalizeSearchTokens(searchQuery.value))
+const isRefreshing = computed(() => refreshState.value === 'refreshing')
+const hasRefreshError = computed(() => refreshState.value === 'failed')
 
 const mergedItems = computed<BookmarkCardItem[]>(() =>
   items.value.map(item => {
@@ -511,6 +697,10 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  if (scheduledRefreshTimer) {
+    window.clearTimeout(scheduledRefreshTimer)
+    scheduledRefreshTimer = null
+  }
   window.removeEventListener('keydown', handleWindowKeydown)
   if (systemThemeQuery.value) {
     detachSystemThemeListener(systemThemeQuery.value)
@@ -526,6 +716,8 @@ onBeforeUnmount(() => {
     :bootstrapped="bootstrapped"
     :loading="loading"
     :error="homeError"
+    :refreshing="isRefreshing"
+    :refresh-failed="hasRefreshError"
     :sections="visibleSections"
     :highlighted-card-key="highlightedCardKey"
     :is-search-mode="Boolean(searchTokens.length)"
@@ -534,6 +726,7 @@ onBeforeUnmount(() => {
     :show-open-count="uiSettings.showOpenCount"
     :theme-status="themeStatus"
     :total="total"
+    @refresh-bookmarks="refreshHomeBookmarks"
     @open-bookmark="handleOpenBookmark"
     @toggle-pin="handleTogglePin"
     @open-settings="openSettingsView"

@@ -14,6 +14,14 @@ const props = defineProps({
     type: Boolean,
     required: true,
   },
+  refreshing: {
+    type: Boolean,
+    required: true,
+  },
+  refreshFailed: {
+    type: Boolean,
+    required: true,
+  },
   error: {
     type: String,
     default: '',
@@ -54,6 +62,7 @@ const props = defineProps({
 
 const emit = defineEmits<{
   (event: 'open-settings'): void
+  (event: 'refresh-bookmarks'): void
   (event: 'open-bookmark', item: BookmarkCardItem): void
   (event: 'toggle-pin', item: BookmarkCardItem): void
 }>()
@@ -155,27 +164,47 @@ onMounted(() => {
       <section class="state-strip">
         <div class="state-strip__chips">
           <span class="status-chip status-chip--muted">{{ themeStatus }}</span>
+          <span v-if="props.refreshing" class="status-chip status-chip--muted">刷新中</span>
+          <span v-else-if="props.refreshFailed" class="status-chip status-chip--danger">刷新失败</span>
           <span v-if="isSearchMode" class="status-chip status-chip--muted">搜索中</span>
           <span class="status-chip status-chip--muted">上下键选</span>
         </div>
       </section>
 
-      <button
-        type="button"
-        class="icon-button icon-button--settings floating-action-button home-dock__settings"
-        aria-label="打开设置"
-        title="设置"
-        @click="emit('open-settings')"
-      >
-        <svg class="icon-button__svg" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M4 7h16" />
-          <path d="M4 12h16" />
-          <path d="M4 17h16" />
-          <circle cx="15" cy="7" r="2.5" />
-          <circle cx="9" cy="12" r="2.5" />
-          <circle cx="17" cy="17" r="2.5" />
-        </svg>
-      </button>
+      <div class="home-dock__actions">
+        <button
+          type="button"
+          class="icon-button floating-action-button home-dock__refresh"
+          :disabled="props.refreshing"
+          aria-label="刷新书签"
+          :title="props.refreshing ? '刷新中' : '刷新书签'"
+          @click="emit('refresh-bookmarks')"
+        >
+          <svg class="icon-button__svg" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 11a8 8 0 0 0-13.66-5.66" />
+            <path d="M4 4v5h5" />
+            <path d="M4 13a8 8 0 0 0 13.66 5.66" />
+            <path d="M20 20v-5h-5" />
+          </svg>
+        </button>
+
+        <button
+          type="button"
+          class="icon-button icon-button--settings floating-action-button home-dock__settings"
+          aria-label="打开设置"
+          title="设置"
+          @click="emit('open-settings')"
+        >
+          <svg class="icon-button__svg" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 7h16" />
+            <path d="M4 12h16" />
+            <path d="M4 17h16" />
+            <circle cx="15" cy="7" r="2.5" />
+            <circle cx="9" cy="12" r="2.5" />
+            <circle cx="17" cy="17" r="2.5" />
+          </svg>
+        </button>
+      </div>
     </div>
   </section>
 </template>
