@@ -57,6 +57,22 @@ export function getBookmarkFolderLabel(folderPath) {
   return labels.length ? labels.join(' / ') : '未分类'
 }
 
+// 把 URL 的 pathname 提炼成站点路径，首页用它表示书签在网站里的位置。
+export function getBookmarkPathLabel(url) {
+  const text = toSafeText(url).trim()
+
+  if (!text) {
+    return '未定位'
+  }
+
+  try {
+    const parsedUrl = new URL(text)
+    return parsedUrl.pathname || '/'
+  } catch {
+    return text.startsWith('/') ? text : '未定位'
+  }
+}
+
 // 按 token 做大小写不敏感高亮，返回带 matched 标记的连续片段。
 export function buildHighlightedSegments(text, tokens) {
   const sourceText = toSafeText(text)
@@ -124,6 +140,7 @@ export function getBookmarkSearchMeta(item, tokens) {
   const url = toSafeText(item?.url).trim()
   const folderLabel = getBookmarkFolderLabel(item?.folderPath)
   const siteLabel = getBookmarkSiteLabel(url)
+  const pathLabel = getBookmarkPathLabel(url)
 
   const tokenMatches = searchTokens.map(token => ({
     token,
@@ -131,15 +148,16 @@ export function getBookmarkSearchMeta(item, tokens) {
     url: tokenMatchesText(token, url),
     folder: tokenMatchesText(token, folderLabel),
     site: tokenMatchesText(token, siteLabel),
+    path: tokenMatchesText(token, pathLabel),
   }))
 
   const matches = searchTokens.length
-    ? tokenMatches.every(entry => entry.title || entry.url || entry.folder || entry.site)
+    ? tokenMatches.every(entry => entry.title || entry.url || entry.folder || entry.site || entry.path)
     : true
 
   const urlOnlyMatch =
     Boolean(searchTokens.length && matches) &&
-    tokenMatches.every(entry => entry.url && !entry.title && !entry.folder && !entry.site)
+    tokenMatches.every(entry => entry.url && !entry.title && !entry.folder && !entry.site && !entry.path)
 
   return {
     matches,
@@ -148,9 +166,11 @@ export function getBookmarkSearchMeta(item, tokens) {
     url,
     folderLabel,
     siteLabel,
+    pathLabel,
     highlightedTitleSegments: getFieldSegments(title, matches, searchTokens),
     highlightedUrlSegments: getFieldSegments(url, matches, searchTokens),
     highlightedFolderSegments: getFieldSegments(folderLabel, matches, searchTokens),
     highlightedSiteSegments: getFieldSegments(siteLabel, matches, searchTokens),
+    highlightedPathSegments: getFieldSegments(pathLabel, matches, searchTokens),
   }
 }

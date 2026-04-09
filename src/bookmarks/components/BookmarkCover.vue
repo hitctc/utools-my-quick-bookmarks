@@ -4,17 +4,15 @@ import { computed } from 'vue'
 const props = defineProps<{
   title: string
   siteLabel: string
-  folderLabel: string
+  pathLabel: string
   openCount: number
   showOpenCount: boolean
-  isPinned: boolean
   active: boolean
   urlOnlyMatch: boolean
   titleSegments: Array<{ text: string; matched: boolean }>
   siteSegments: Array<{ text: string; matched: boolean }>
-  folderSegments: Array<{ text: string; matched: boolean }>
+  pathSegments: Array<{ text: string; matched: boolean }>
 }>()
-const pinLabel = computed(() => (props.isPinned ? '已置顶' : '未置顶'))
 const openCountLabel = computed(() => `打开 ${props.openCount} 次`)
 
 // 片段数据可能来自空字符串，这里统一兜底，保证模板渲染结构稳定。
@@ -28,7 +26,7 @@ function getStableSegments(segments: Array<{ text: string; matched: boolean }>, 
 
 const stableTitleSegments = computed(() => getStableSegments(props.titleSegments, props.title))
 const stableSiteSegments = computed(() => getStableSegments(props.siteSegments, props.siteLabel))
-const stableFolderSegments = computed(() => getStableSegments(props.folderSegments, props.folderLabel))
+const stablePathSegments = computed(() => getStableSegments(props.pathSegments, props.pathLabel))
 </script>
 
 <template>
@@ -40,15 +38,6 @@ const stableFolderSegments = computed(() => getStableSegments(props.folderSegmen
           <span v-else>{{ segment.text }}</span>
         </template>
       </p>
-      <div class="bookmark-cover__chips">
-        <span
-          class="bookmark-cover__chip"
-          :class="{ 'bookmark-cover__chip--active': isPinned }"
-        >
-          {{ pinLabel }}
-        </span>
-        <span v-if="urlOnlyMatch" class="bookmark-cover__chip">网址命中</span>
-      </div>
     </div>
 
     <div class="bookmark-cover__body bookmark-cover__body--compact">
@@ -61,16 +50,17 @@ const stableFolderSegments = computed(() => getStableSegments(props.folderSegmen
     </div>
 
     <div class="bookmark-cover__footer">
-      <span class="bookmark-cover__folder" :title="folderLabel">
-        <span class="bookmark-cover__folder-label">目录</span>
-        <span class="bookmark-cover__folder-value">
-          <template v-for="(segment, index) in stableFolderSegments" :key="`folder-${index}`">
+      <span class="bookmark-cover__path" :title="pathLabel">
+        <span class="bookmark-cover__path-label">路径</span>
+        <span class="bookmark-cover__path-value">
+          <template v-for="(segment, index) in stablePathSegments" :key="`path-${index}`">
             <mark v-if="segment.matched" class="bookmark-cover__highlight">{{ segment.text }}</mark>
             <span v-else>{{ segment.text }}</span>
           </template>
         </span>
       </span>
       <div class="bookmark-cover__footer-stats">
+        <span v-if="urlOnlyMatch" class="bookmark-cover__chip">网址命中</span>
         <span v-if="showOpenCount && openCount > 0" class="bookmark-cover__count">{{ openCountLabel }}</span>
       </div>
     </div>

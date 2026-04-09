@@ -23,7 +23,7 @@ const emit = defineEmits<{
   (event: 'toggle-pin', item: BookmarkCardItem): void
 }>()
 
-const pinButtonLabel = computed(() => (props.item.isPinned ? '取消置顶' : '置顶'))
+const pinButtonLabel = computed(() => (props.item.isPinned ? '已置顶' : '置顶'))
 const searchMeta = computed(() => getBookmarkSearchMeta(props.item, props.searchTokens))
 
 // 打开动作只负责把 URL 交回上层，避免卡片组件自己绑定具体的打开实现。
@@ -57,15 +57,14 @@ function handleTogglePin(event: MouseEvent) {
       <BookmarkCover
         :title="searchMeta.title"
         :site-label="searchMeta.siteLabel"
-        :folder-label="searchMeta.folderLabel"
+        :path-label="searchMeta.pathLabel"
         :open-count="item.openCount"
         :show-open-count="showOpenCount"
-        :is-pinned="item.isPinned"
         :active="active"
         :url-only-match="searchMeta.urlOnlyMatch"
         :title-segments="searchMeta.highlightedTitleSegments"
         :site-segments="searchMeta.highlightedSiteSegments"
-        :folder-segments="searchMeta.highlightedFolderSegments"
+        :path-segments="searchMeta.highlightedPathSegments"
       />
     </button>
   </article>

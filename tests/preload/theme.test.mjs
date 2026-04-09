@@ -21,10 +21,10 @@ test('resolveThemeMode maps system theme mode from prefersDark', () => {
 })
 
 test('formatThemeStatus renders the selected mode and resolved theme', () => {
-  assert.equal(formatThemeStatus('system', 'dark'), 'SYSTEM / DARK')
+  assert.equal(formatThemeStatus('system', 'dark'), '跟随 / 深色')
 })
 
 test('formatThemeStatus keeps explicit theme modes as a single label', () => {
-  assert.equal(formatThemeStatus('dark', 'dark'), 'DARK')
-  assert.equal(formatThemeStatus('light', 'light'), 'LIGHT')
+  assert.equal(formatThemeStatus('dark', 'dark'), '深色')
+  assert.equal(formatThemeStatus('light', 'light'), '浅色')
 })

@@ -100,24 +100,6 @@ onMounted(() => {
 
 <template>
   <section class="page-shell page-shell--home">
-    <button
-      type="button"
-      class="icon-button icon-button--settings page-shell__settings floating-action-button"
-      aria-label="打开设置"
-      title="设置"
-      @click="emit('open-settings')"
-    >
-      <span class="icon-button__glyph" aria-hidden="true">+</span>
-    </button>
-
-    <header class="hero hero--compact hero--status-bar">
-      <div class="hero__status-row">
-        <span class="status-chip">书签 {{ total }}</span>
-        <span class="status-chip status-chip--muted">{{ themeStatus }}</span>
-        <span v-if="isSearchMode" class="status-chip status-chip--muted">搜索中</span>
-      </div>
-    </header>
-
     <section v-if="!bootstrapped" class="state-card" ref="homeContentRef">
       <p>请通过 uTools 接入开发模式进入插件。</p>
     </section>
@@ -156,14 +138,33 @@ onMounted(() => {
         </div>
       </BookmarksSection>
     </div>
-    <section
-      v-if="bootstrapped && !loading && !error"
-      class="state-strip"
-    >
-      <p class="state-strip__label">[ 操作提示 ]</p>
-      <p class="state-strip__copy">
-        上下键选择，回车打开；多个关键词用空格分开
-      </p>
-    </section>
+
+    <div v-if="bootstrapped && !loading && !error" class="home-dock">
+      <section class="state-strip">
+        <div class="state-strip__chips">
+          <span class="status-chip">书签 {{ total }}</span>
+          <span class="status-chip status-chip--muted">{{ themeStatus }}</span>
+          <span v-if="isSearchMode" class="status-chip status-chip--muted">搜索中</span>
+          <span class="status-chip status-chip--muted">上下键选</span>
+        </div>
+      </section>
+
+      <button
+        type="button"
+        class="icon-button icon-button--settings floating-action-button home-dock__settings"
+        aria-label="打开设置"
+        title="设置"
+        @click="emit('open-settings')"
+      >
+        <svg class="icon-button__svg" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 7h16" />
+          <path d="M4 12h16" />
+          <path d="M4 17h16" />
+          <circle cx="15" cy="7" r="2.5" />
+          <circle cx="9" cy="12" r="2.5" />
+          <circle cx="17" cy="17" r="2.5" />
+        </svg>
+      </button>
+    </div>
   </section>
 </template>

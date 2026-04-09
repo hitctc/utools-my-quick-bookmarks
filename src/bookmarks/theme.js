@@ -9,9 +9,13 @@ export function resolveThemeMode(themeMode, prefersDark) {
 }
 
 export function formatThemeStatus(themeMode, resolvedTheme) {
-  if (themeMode === 'dark' || themeMode === 'light') {
-    return themeMode.toUpperCase()
+  if (themeMode === 'dark') {
+    return '深色'
   }
 
-  return `SYSTEM / ${String(resolvedTheme || 'light').toUpperCase()}`
+  if (themeMode === 'light') {
+    return '浅色'
+  }
+
+  return `跟随 / ${resolvedTheme === 'dark' ? '深色' : '浅色'}`
 }

@@ -77,11 +77,11 @@ a {
 .page-shell--home {
   display: grid;
   position: relative;
-  gap: 12px;
-  padding-top: 14px;
+  gap: 10px;
+  padding-top: 10px;
+  padding-bottom: 92px;
 }
 
-.hero,
 .state-card,
 .settings-card,
 .bookmarks-section,
@@ -92,39 +92,10 @@ a {
   box-shadow: none;
 }
 
-.hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.85fr);
-  align-items: start;
-  gap: 18px 24px;
-  padding: 28px;
-}
-
-.hero--status-bar {
-  grid-template-columns: minmax(0, 1fr);
-  gap: 10px;
-  padding: 10px 16px;
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--surface) 88%, var(--surface-raised));
-}
-
-.hero--status-bar .hero__status-row {
-  justify-content: flex-start;
-  gap: 8px;
-  padding-right: 56px;
-}
-
-.hero__status-row {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
 .settings-card h1,
 .bookmark-cover__site,
 .bookmark-cover__title,
-.bookmark-cover__folder,
+.bookmark-cover__path,
 .bookmark-card__pin-text {
   margin: 0;
 }
@@ -142,8 +113,7 @@ a {
 
 .settings-copy,
 .field-error,
-.bookmark-cover__folder,
-.state-strip__copy {
+.bookmark-cover__path {
   margin: 0;
   color: var(--text-secondary);
   line-height: 1.6;
@@ -199,12 +169,6 @@ a {
   min-width: 84px;
 }
 
-.icon-button__glyph,
-.icon-button__label {
-  display: inline-flex;
-  align-items: center;
-}
-
 .icon-button--back,
 .floating-action-button {
   min-height: 38px;
@@ -216,28 +180,37 @@ a {
   letter-spacing: 0.02em;
 }
 
+.icon-button__glyph,
+.icon-button__label {
+  display: inline-flex;
+  align-items: center;
+}
+
+.icon-button__svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .icon-button--back {
   gap: 8px;
   padding-inline: 12px 14px;
 }
 
 .icon-button--back .icon-button__glyph,
-.floating-action-button .icon-button__glyph {
+.floating-action-button .icon-button__glyph,
+.floating-action-button .icon-button__svg {
   justify-content: center;
   min-width: 1em;
-  font-size: 16px;
   line-height: 1;
 }
 
 .icon-button--back .icon-button__label {
   font-size: 12px;
-}
-
-.page-shell__settings {
-  position: absolute;
-  top: 10px;
-  right: 18px;
-  z-index: 3;
 }
 
 .floating-action-button {
@@ -278,36 +251,47 @@ a {
   padding: 24px;
 }
 
+.home-dock {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  left: 18px;
+  z-index: 6;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.home-dock__settings,
 .state-strip {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  pointer-events: auto;
+}
+
+.state-strip {
+  display: flex;
   align-items: center;
-  gap: 10px 14px;
-  padding: 10px 14px;
+  gap: 8px;
+  min-width: 0;
+  max-width: calc(100% - 56px);
+  padding: 8px 10px;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 12px;
   background: color-mix(in srgb, var(--surface-raised) 92%, var(--surface));
 }
 
-.state-strip__label {
-  margin: 0;
-  color: var(--text-disabled);
-  font-family: "Space Mono", monospace;
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  white-space: nowrap;
-}
-
-.state-strip__copy {
-  max-width: 60ch;
-  font-size: 13px;
-  line-height: 1.45;
+.state-strip__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
 }
 
 .bookmarks-section {
   display: grid;
-  gap: 14px;
-  padding: 16px;
+  gap: 12px;
+  padding: 14px;
   border-radius: 14px;
 }
 
@@ -381,14 +365,14 @@ a {
 }
 
 .bookmarks-section__header,
-.hero {
+.settings-header {
   min-width: 0;
 }
 
 .bookmark-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
+  gap: 10px;
 }
 
 .bookmark-grid__item {
@@ -411,20 +395,20 @@ a {
 
 .bookmark-card__pin {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 8px;
+  right: 8px;
   z-index: 2;
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  min-height: 26px;
-  padding: 0 8px;
+  min-height: 24px;
+  padding: 0 7px;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: color-mix(in srgb, var(--surface-raised) 90%, var(--surface));
   color: var(--text-primary);
   font-family: "Space Mono", monospace;
-  font-size: 10px;
+  font-size: 9px;
   letter-spacing: 0.02em;
 }
 
@@ -440,7 +424,7 @@ a {
 }
 
 .bookmark-card__pin-text {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
 }
 
@@ -464,12 +448,12 @@ a {
 .bookmark-cover {
   position: relative;
   display: grid;
-  gap: 10px;
-  min-height: 156px;
-  padding: 14px;
+  gap: 7px;
+  min-height: 132px;
+  padding: 12px 12px 10px;
   overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 13px;
   background: var(--surface);
 }
 
@@ -484,32 +468,20 @@ a {
   z-index: 1;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
-}
-
-.bookmark-cover__meta-row {
-  justify-content: space-between;
 }
 
 .bookmark-cover__site {
   color: var(--text-secondary);
   font-family: "Space Mono", monospace;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
+  line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   letter-spacing: 0.02em;
-}
-
-.bookmark-cover__chips {
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 6px;
-  flex: 0 0 auto;
-  max-width: 52%;
 }
 
 .bookmark-cover__body {
@@ -525,30 +497,31 @@ a {
   display: -webkit-box;
   overflow: hidden;
   color: var(--text-primary);
-  font-size: 15px;
-  line-height: 1.32;
+  font-size: 14px;
+  line-height: 1.26;
   font-weight: 700;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
 
-.bookmark-cover__folder {
+.bookmark-cover__path {
   color: var(--text-disabled);
   font-family: "Space Mono", monospace;
-  font-size: 11px;
+  font-size: 10px;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   min-width: 0;
   flex: 1 1 auto;
   white-space: nowrap;
+  line-height: 1.2;
 }
 
-.bookmark-cover__folder-label {
+.bookmark-cover__path-label {
   flex: 0 0 auto;
 }
 
-.bookmark-cover__folder-value {
+.bookmark-cover__path-value {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -558,50 +531,47 @@ a {
   margin-top: auto;
   justify-content: space-between;
   min-width: 0;
-  gap: 10px;
+  gap: 8px;
 }
 
 .bookmark-cover__chip {
   display: inline-flex;
   align-items: center;
-  min-height: 22px;
+  min-height: 20px;
   max-width: 100%;
-  padding: 0 8px;
+  padding: 0 7px;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--surface-raised);
   color: var(--text-secondary);
   font-family: "Space Mono", monospace;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.01em;
   white-space: nowrap;
-}
-
-.bookmark-cover__chip--active {
-  background: var(--text-display);
-  border-color: var(--accent);
-  color: var(--bg);
 }
 
 .bookmark-cover__count {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 24px;
-  min-height: 24px;
-  padding: 0 7px;
+  min-width: 22px;
+  min-height: 20px;
+  padding: 0 6px;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--surface-raised);
   color: var(--text-primary);
   font-family: "Space Mono", monospace;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
 }
 
 .bookmark-cover__footer-stats {
   flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .bookmark-cover__highlight {
@@ -727,26 +697,13 @@ a {
     padding: 16px;
   }
 
-  .hero,
   .bookmarks-section__header,
   .settings-header {
     align-items: stretch;
   }
 
-  .hero {
-    grid-template-columns: 1fr;
-  }
-
-  .hero--status-bar {
-    padding-right: 12px;
-  }
-
-  .hero--status-bar .hero__status-row {
-    padding-right: 44px;
-  }
-
-  .hero__status-row {
-    justify-content: flex-start;
+  .page-shell--home {
+    padding-bottom: 88px;
   }
 
   .bookmark-grid {
@@ -758,13 +715,14 @@ a {
     padding: 16px;
   }
 
-  .page-shell__settings {
-    top: 8px;
+  .home-dock {
     right: 16px;
+    bottom: 16px;
+    left: 16px;
   }
 
   .state-strip {
-    grid-template-columns: 1fr;
+    max-width: calc(100% - 52px);
   }
 
   .actions-row > button {
