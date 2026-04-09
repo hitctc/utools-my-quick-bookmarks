@@ -93,102 +93,151 @@ function emitWindowHeightChange(rawValue: string) {
     </button>
 
     <section class="settings-card">
-      <h1>Chrome 书签文件</h1>
-      <p class="settings-copy">当前只支持 macOS 下的 Google Chrome 默认 profile。</p>
-      <p class="settings-copy">
-        首页直接展示书签结果；搜索请使用 uTools 顶部输入框，多个关键词用空格分开。
-      </p>
-      <p class="settings-copy">
-        如果你使用的不是 Default profile，请把路径改成对应的 Bookmarks 文件后再保存或刷新。
-      </p>
-
-      <label class="field-label" for="bookmark-path">书签文件路径</label>
-      <input
-        id="bookmark-path"
-        v-model="localPath"
-        class="path-input"
-        type="text"
-        placeholder="/Users/你的用户名/Library/Application Support/Google/Chrome/Default/Bookmarks"
-      />
-
-      <p v-if="error" class="field-error">错误：{{ error }}</p>
-
-      <div class="settings-panel">
-        <p class="mono-label">主题</p>
-        <div class="segmented-control" role="tablist" aria-label="主题模式">
-          <button
-            type="button"
-            class="segmented-control__button"
-            :class="{ 'segmented-control__button--active': themeMode === 'system' }"
-            @click="emitThemeModeChange('system')"
-          >
-            跟随系统
-          </button>
-          <button
-            type="button"
-            class="segmented-control__button"
-            :class="{ 'segmented-control__button--active': themeMode === 'dark' }"
-            @click="emitThemeModeChange('dark')"
-          >
-            深色
-          </button>
-          <button
-            type="button"
-            class="segmented-control__button"
-            :class="{ 'segmented-control__button--active': themeMode === 'light' }"
-            @click="emitThemeModeChange('light')"
-          >
-            浅色
-          </button>
+      <header class="settings-hero">
+        <p class="section-label">Chrome Bookmarks</p>
+        <div class="settings-hero__body">
+          <div class="settings-hero__content">
+            <h1>设置与展示偏好</h1>
+            <p class="settings-copy">
+              当前只支持 macOS 下的 Google Chrome 默认 profile。首页直接展示书签结果，搜索请继续使用
+              uTools 顶部输入框，多个关键词用空格分开。
+            </p>
+          </div>
+          <p class="settings-note">
+            如果你使用的不是 Default profile，把路径改成对应的 Bookmarks 文件后再保存或刷新。
+          </p>
         </div>
-      </div>
+      </header>
 
-      <label class="field-label" for="window-height">插件窗口高度</label>
-      <input
-        id="window-height"
-        v-model="localWindowHeight"
-        class="path-input"
-        type="number"
-        min="1"
-        step="1"
-        inputmode="numeric"
-        placeholder="640"
-        @change="emitWindowHeightChange(($event.target as HTMLInputElement).value)"
-      />
-      <p class="field-hint">uTools 主插件窗口目前只支持设置高度，不支持单独设置宽度。</p>
+      <div class="settings-grid">
+        <section class="settings-group settings-group--path">
+          <div class="settings-group__header">
+            <div>
+              <p class="mono-label">数据来源</p>
+              <h2>书签文件路径</h2>
+            </div>
+            <p class="settings-group__summary">
+              默认读取 Chrome 的 Default profile，你也可以把这里切到其他 profile 的 Bookmarks 文件。
+            </p>
+          </div>
 
-      <div class="settings-toggle-list">
-        <label class="settings-toggle">
-          <span>
-            <strong>首页显示最近打开</strong>
-            <small>打开后会在首页展示最近打开过的书签分区。</small>
-          </span>
+          <label class="field-label" for="bookmark-path">当前读取路径</label>
           <input
-            :checked="showRecentOpened"
-            class="settings-toggle__input"
-            type="checkbox"
-            @change="emitUiSettingChange('showRecentOpened', ($event.target as HTMLInputElement).checked)"
+            id="bookmark-path"
+            v-model="localPath"
+            class="path-input"
+            type="text"
+            placeholder="/Users/你的用户名/Library/Application Support/Google/Chrome/Default/Bookmarks"
           />
-        </label>
 
-        <label class="settings-toggle">
-          <span>
-            <strong>显示打开次数</strong>
-            <small>打开后会在书签卡片右下角显示累计打开次数。</small>
-          </span>
+          <p v-if="error" class="field-error">错误：{{ error }}</p>
+          <p v-else class="field-hint">保存会先校验路径并重新读取，成功后才会回到首页。</p>
+
+          <div class="actions-row actions-row--path">
+            <button class="primary-button" :disabled="saving" @click="emitSave">保存并读取</button>
+            <button class="secondary-button" :disabled="saving" @click="emit('reset')">恢复默认路径</button>
+            <button class="secondary-button" :disabled="saving" @click="emitReload">按当前路径刷新</button>
+          </div>
+        </section>
+
+        <section class="settings-group settings-group--compact">
+          <div class="settings-group__header">
+            <div>
+              <p class="mono-label">外观</p>
+              <h2>主题模式</h2>
+            </div>
+            <p class="settings-group__summary">主题切换会即时生效，首页状态条也会同步更新。</p>
+          </div>
+
+          <div class="segmented-control" role="tablist" aria-label="主题模式">
+            <button
+              type="button"
+              class="segmented-control__button"
+              :class="{ 'segmented-control__button--active': themeMode === 'system' }"
+              @click="emitThemeModeChange('system')"
+            >
+              跟随系统
+            </button>
+            <button
+              type="button"
+              class="segmented-control__button"
+              :class="{ 'segmented-control__button--active': themeMode === 'dark' }"
+              @click="emitThemeModeChange('dark')"
+            >
+              深色
+            </button>
+            <button
+              type="button"
+              class="segmented-control__button"
+              :class="{ 'segmented-control__button--active': themeMode === 'light' }"
+              @click="emitThemeModeChange('light')"
+            >
+              浅色
+            </button>
+          </div>
+        </section>
+
+        <section class="settings-group settings-group--compact">
+          <div class="settings-group__header">
+            <div>
+              <p class="mono-label">窗口</p>
+              <h2>插件窗口高度</h2>
+            </div>
+            <p class="settings-group__summary">调整后会立即生效，关闭并重新进入插件后会继续沿用当前高度。</p>
+          </div>
+
+          <label class="field-label" for="window-height">高度</label>
+          <p class="field-hint">uTools 主插件窗口目前只支持设置高度，不支持单独设置宽度。</p>
           <input
-            :checked="showOpenCount"
-            class="settings-toggle__input"
-            type="checkbox"
-            @change="emitUiSettingChange('showOpenCount', ($event.target as HTMLInputElement).checked)"
+            id="window-height"
+            v-model="localWindowHeight"
+            class="path-input"
+            type="number"
+            min="1"
+            step="1"
+            inputmode="numeric"
+            placeholder="640"
+            @change="emitWindowHeightChange(($event.target as HTMLInputElement).value)"
           />
-        </label>
-      </div>
+        </section>
 
-      <div class="actions-row">
-        <button class="primary-button" :disabled="saving" @click="emitSave">保存并读取</button>
-        <button class="secondary-button" :disabled="saving" @click="emit('reset')">恢复默认路径</button>
-        <button class="secondary-button" :disabled="saving" @click="emitReload">按当前路径刷新</button>
+        <section class="settings-group settings-group--compact settings-group--display">
+          <div class="settings-group__header">
+            <div>
+              <p class="mono-label">首页展示</p>
+              <h2>显示选项</h2>
+            </div>
+            <p class="settings-group__summary">这些开关会即时生效，不需要额外点击保存。</p>
+          </div>
+
+          <div class="settings-toggle-list">
+            <label class="settings-toggle">
+              <span>
+                <strong>首页显示最近打开</strong>
+                <small>打开后会在首页展示最近打开过的书签分区。</small>
+              </span>
+              <input
+                :checked="showRecentOpened"
+                class="settings-toggle__input"
+                type="checkbox"
+                @change="emitUiSettingChange('showRecentOpened', ($event.target as HTMLInputElement).checked)"
+              />
+            </label>
+
+            <label class="settings-toggle">
+              <span>
+                <strong>显示打开次数</strong>
+                <small>打开后会在书签卡片右下角显示累计打开次数。</small>
+              </span>
+              <input
+                :checked="showOpenCount"
+                class="settings-toggle__input"
+                type="checkbox"
+                @change="emitUiSettingChange('showOpenCount', ($event.target as HTMLInputElement).checked)"
+              />
+            </label>
+          </div>
+        </section>
       </div>
     </section>
   </section>

@@ -84,6 +84,8 @@ a {
 
 .page-shell--settings {
   position: relative;
+  display: grid;
+  gap: 16px;
   padding-top: 78px;
 }
 
@@ -537,7 +539,9 @@ a {
 }
 
 .bookmark-cover__path-value {
+  display: block;
   min-width: 0;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -627,13 +631,88 @@ a {
 
 .settings-card {
   display: grid;
-  gap: 10px;
+  gap: 16px;
   border-radius: 18px;
+  padding: 28px;
 }
 
 .settings-card h1 {
-  font-size: 28px;
-  line-height: 1.05;
+  font-size: clamp(32px, 4vw, 42px);
+  line-height: 0.98;
+}
+
+.settings-card h2 {
+  margin: 4px 0 0;
+  font-size: 22px;
+  line-height: 1.08;
+}
+
+.settings-hero {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--surface-raised) 92%, var(--bg)) 0%, var(--surface) 100%);
+}
+
+.settings-hero__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(240px, 0.9fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.settings-hero__content {
+  display: grid;
+  gap: 10px;
+}
+
+.settings-note {
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--border-visible);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface-raised) 88%, transparent);
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.settings-group {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface-raised) 92%, transparent);
+}
+
+.settings-group--path,
+.settings-group--display {
+  grid-column: 1 / -1;
+}
+
+.settings-group__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.settings-group__summary {
+  max-width: 36ch;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
 }
 
 .page-shell .section-label {
@@ -642,16 +721,18 @@ a {
 
 .field-label {
   display: block;
-  margin-top: 18px;
+  margin-top: 0;
   margin-bottom: 8px;
   font-weight: 700;
+  font-size: 13px;
 }
 
 .path-input {
   width: 100%;
+  min-height: 50px;
   padding: 13px 14px;
   border: 1px solid var(--border-visible);
-  border-radius: 14px;
+  border-radius: 16px;
   background: var(--surface-raised);
   color: var(--text-primary);
 }
@@ -660,32 +741,47 @@ a {
   color: var(--text-disabled);
 }
 
+.field-error {
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--border-visible));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  color: var(--danger);
+}
+
 .field-hint {
-  margin: 8px 0 0;
+  margin: 0;
   color: var(--text-secondary);
   font-size: 13px;
   line-height: 1.5;
 }
 
 .actions-row {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 10px;
-  margin-top: 18px;
+  margin-top: 0;
+}
+
+.actions-row--path {
+  grid-template-columns: minmax(0, 1.15fr) repeat(2, minmax(0, 1fr));
+}
+
+.actions-row--path > button {
+  width: 100%;
 }
 
 .settings-toggle-list {
   display: grid;
   gap: 10px;
-  margin-top: 18px;
+  margin-top: 0;
 }
 
 .settings-toggle {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  padding: 13px 14px;
+  padding: 15px 16px;
   border: 1px solid var(--border-visible);
   border-radius: 14px;
   background: var(--surface-raised);
@@ -711,6 +807,7 @@ a {
 .settings-toggle__input {
   width: 18px;
   height: 18px;
+  margin-top: 2px;
   accent-color: var(--accent);
   flex: 0 0 auto;
 }
@@ -737,7 +834,8 @@ a {
   }
 
   .bookmarks-section,
-  .settings-panel {
+  .settings-panel,
+  .settings-card {
     padding: 16px;
   }
 
@@ -755,6 +853,17 @@ a {
     top: 16px;
     left: 16px;
     right: auto;
+  }
+
+  .settings-hero__body,
+  .settings-grid,
+  .settings-group__header,
+  .actions-row--path {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-group__header {
+    display: grid;
   }
 
   .actions-row > button {
