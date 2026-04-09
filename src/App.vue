@@ -3,6 +3,10 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import HomeView from './bookmarks/HomeView.vue'
 import SettingsView from './bookmarks/SettingsView.vue'
 import {
+  getBookmarkSearchMeta,
+  normalizeSearchTokens,
+} from './bookmarks/search.js'
+import {
   formatThemeStatus,
   resolveThemeMode,
   SYSTEM_THEME_QUERY,
@@ -64,17 +68,6 @@ function normalizeBookmarkItem(item: BookmarkItem): BookmarkItem {
       : 'bookmark_bar',
     dateAdded: String(item?.dateAdded ?? ''),
   }
-}
-
-// 搜索用的文本会把标题、地址和目录都串起来，方便做简单模糊匹配。
-function buildSearchText(item: BookmarkCardItem) {
-  return [
-    item.title || '',
-    item.url || '',
-    Array.isArray(item.folderPath) ? item.folderPath.join(' / ') : '',
-  ]
-    .join(' ')
-    .toLowerCase()
 }
 
 // 系统主题状态只要跟浏览器媒体查询同步一次，后续就由监听器保持更新。
@@ -315,6 +308,7 @@ const resolvedTheme = computed<BookmarkResolvedTheme>(() =>
   resolveThemeMode(themeMode.value, prefersDark.value),
 )
 const themeStatus = computed(() => formatThemeStatus(themeMode.value, resolvedTheme.value))
+const searchTokens = computed(() => normalizeSearchTokens(searchQuery.value))
 
 const mergedItems = computed<BookmarkCardItem[]>(() =>
   items.value.map(item => {
@@ -329,12 +323,11 @@ const mergedItems = computed<BookmarkCardItem[]>(() =>
 )
 
 const searchableItems = computed(() => {
-  const query = searchQuery.value.trim().toLowerCase()
-  if (!query) {
+  if (!searchTokens.value.length) {
     return mergedItems.value
   }
 
-  return mergedItems.value.filter(item => buildSearchText(item).includes(query))
+  return mergedItems.value.filter(item => getBookmarkSearchMeta(item, searchTokens.value).matches)
 })
 
 const pinnedItems = computed(() =>
@@ -353,7 +346,7 @@ const regularItems = computed(() =>
 
 const visibleSections = computed<BookmarkSection[]>(() => {
   const query = searchQuery.value.trim()
-  if (query) {
+  if (searchTokens.value.length) {
     return searchableItems.value.length
       ? [
           {
@@ -480,7 +473,7 @@ onBeforeUnmount(() => {
     :error="homeError"
     :sections="visibleSections"
     :highlighted-card-key="highlightedCardKey"
-    :is-search-mode="Boolean(searchQuery.trim())"
+    :is-search-mode="Boolean(searchTokens.length)"
     :search-query="searchQuery"
     :empty-text="emptyText"
     :show-open-count="uiSettings.showOpenCount"
