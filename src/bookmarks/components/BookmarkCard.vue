@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import BookmarkCover from './BookmarkCover.vue'
+import { getBookmarkSearchMeta } from '../search'
 import type { BookmarkCardItem } from '../types'
 
 const props = withDefaults(
@@ -8,10 +9,12 @@ const props = withDefaults(
     item: BookmarkCardItem
     active?: boolean
     showOpenCount?: boolean
+    searchTokens?: string[]
   }>(),
   {
     active: false,
     showOpenCount: true,
+    searchTokens: () => [],
   },
 )
 
@@ -20,15 +23,8 @@ const emit = defineEmits<{
   (event: 'toggle-pin', item: BookmarkCardItem): void
 }>()
 
-const pinButtonLabel = computed(() => (props.item.isPinned ? '[ UNPIN ]' : '[ PIN ]'))
-
-function formatFolderPath(folderPath: string[]) {
-  if (!Array.isArray(folderPath) || folderPath.length === 0) {
-    return '未分类'
-  }
-
-  return folderPath.join(' / ')
-}
+const pinButtonLabel = computed(() => (props.item.isPinned ? '取消置顶' : '置顶'))
+const searchMeta = computed(() => getBookmarkSearchMeta(props.item, props.searchTokens))
 
 // 打开动作只负责把 URL 交回上层，避免卡片组件自己绑定具体的打开实现。
 function handleOpen() {
@@ -59,14 +55,17 @@ function handleTogglePin(event: MouseEvent) {
 
     <button type="button" class="bookmark-card__open" @keydown.enter.stop @click="handleOpen">
       <BookmarkCover
-        :title="item.title"
-        :url="item.url"
-        :folder-label="formatFolderPath(item.folderPath)"
-        :source-root="item.sourceRoot"
+        :title="searchMeta.title"
+        :site-label="searchMeta.siteLabel"
+        :folder-label="searchMeta.folderLabel"
         :open-count="item.openCount"
         :show-open-count="showOpenCount"
         :is-pinned="item.isPinned"
         :active="active"
+        :url-only-match="searchMeta.urlOnlyMatch"
+        :title-segments="searchMeta.highlightedTitleSegments"
+        :site-segments="searchMeta.highlightedSiteSegments"
+        :folder-segments="searchMeta.highlightedFolderSegments"
       />
     </button>
   </article>

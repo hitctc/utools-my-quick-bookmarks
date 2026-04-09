@@ -352,7 +352,6 @@ const visibleSections = computed<BookmarkSection[]>(() => {
           {
             key: 'search',
             title: '搜索结果',
-            description: `匹配“${query}”的书签卡片`,
             entries: buildSectionEntries('search', searchableItems.value),
           },
         ]
@@ -365,7 +364,6 @@ const visibleSections = computed<BookmarkSection[]>(() => {
     sections.push({
       key: 'pinned',
       title: '置顶',
-      description: '优先展示在首页的插件内置顶书签',
       entries: buildSectionEntries('pinned', pinnedItems.value),
     })
   }
@@ -374,7 +372,6 @@ const visibleSections = computed<BookmarkSection[]>(() => {
     sections.push({
       key: 'recent',
       title: '最近打开',
-      description: '这里只记录插件内打开过的书签，不回写 Chrome 源文件',
       entries: buildSectionEntries('recent', recentItems.value),
     })
   }
@@ -383,7 +380,6 @@ const visibleSections = computed<BookmarkSection[]>(() => {
     sections.push({
       key: 'all',
       title: '全部书签',
-      description: '从 macOS Chrome Bookmarks 文件解析出的书签',
       entries: buildSectionEntries('all', regularItems.value),
     })
   }
@@ -467,7 +463,6 @@ onBeforeUnmount(() => {
 <template>
   <HomeView
     v-if="currentView === 'home'"
-    :bookmark-path="bookmarkPath"
     :bootstrapped="bootstrapped"
     :loading="loading"
     :error="homeError"
@@ -477,7 +472,6 @@ onBeforeUnmount(() => {
     :search-query="searchQuery"
     :empty-text="emptyText"
     :show-open-count="uiSettings.showOpenCount"
-    :theme-mode="themeMode"
     :theme-status="themeStatus"
     :total="total"
     @open-bookmark="handleOpenBookmark"
@@ -490,7 +484,6 @@ onBeforeUnmount(() => {
     :show-recent-opened="uiSettings.showRecentOpened"
     :show-open-count="uiSettings.showOpenCount"
     :theme-mode="themeMode"
-    :theme-status="themeStatus"
     :saving="saving"
     :error="settingsError"
     @back="currentView = 'home'"

@@ -36,6 +36,5 @@ export interface BookmarkCardEntry {
 export interface BookmarkSection {
   key: string
   title: string
-  description: string
   entries: BookmarkCardEntry[]
 }
