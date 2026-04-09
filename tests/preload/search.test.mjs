@@ -120,6 +120,61 @@ test('getBookmarkSearchMeta returns false when one keyword is missing', () => {
   assert.deepEqual(meta.highlightedSiteSegments, [{ text: 'docs.example.com', matched: false }])
 })
 
+test('getBookmarkSearchMeta matches a chinese title by full pinyin', () => {
+  const item = {
+    title: '网络安全',
+    url: 'https://example.com/security',
+    folderPath: ['技术资料'],
+    sourceRoot: 'bookmark_bar',
+  }
+
+  const meta = getBookmarkSearchMeta(item, normalizeSearchTokens('wangluoanquan'))
+
+  assert.equal(meta.matches, true)
+  assert.equal(meta.urlOnlyMatch, false)
+  assert.deepEqual(meta.highlightedTitleSegments, [{ text: '网络安全', matched: false }])
+})
+
+test('getBookmarkSearchMeta matches a chinese title by pinyin initials', () => {
+  const item = {
+    title: '网络安全',
+    url: 'https://example.com/security',
+    folderPath: ['技术资料'],
+    sourceRoot: 'bookmark_bar',
+  }
+
+  const meta = getBookmarkSearchMeta(item, normalizeSearchTokens('wlaq'))
+
+  assert.equal(meta.matches, true)
+  assert.equal(meta.urlOnlyMatch, false)
+})
+
+test('getBookmarkSearchMeta keeps AND semantics for mixed chinese and pinyin tokens', () => {
+  const item = {
+    title: '网络安全清单',
+    url: 'https://example.com/checklist',
+    folderPath: ['技术资料'],
+    sourceRoot: 'bookmark_bar',
+  }
+
+  const meta = getBookmarkSearchMeta(item, normalizeSearchTokens('wangluo 清单'))
+
+  assert.equal(meta.matches, true)
+})
+
+test('getBookmarkSearchMeta does not expand pinyin matching to folder labels', () => {
+  const item = {
+    title: 'Alpha Guide',
+    url: 'https://example.com/guide',
+    folderPath: ['工作学习'],
+    sourceRoot: 'bookmark_bar',
+  }
+
+  const meta = getBookmarkSearchMeta(item, normalizeSearchTokens('gongzuoxuexi'))
+
+  assert.equal(meta.matches, false)
+})
+
 test('getBookmarkSearchMeta keeps stable labels when visible fields are empty', () => {
   const meta = getBookmarkSearchMeta(
     {

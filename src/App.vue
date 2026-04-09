@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import HomeView from './bookmarks/HomeView.vue'
 import SettingsView from './bookmarks/SettingsView.vue'
+import { getKeyboardNavigationResult } from './bookmarks/keyboardNavigation.js'
 import {
   getBookmarkSearchMeta,
   normalizeSearchTokens,
@@ -32,6 +33,7 @@ type BookmarkLoadResult = {
 type BookmarkUiSettingsPatch = Partial<BookmarkUiSettings>
 type PinnedBookmarkMap = Record<string, number>
 type RecentOpenedMap = Record<string, BookmarkRecentRecord>
+const DEFAULT_WINDOW_HEIGHT = 640
 
 const currentView = ref<'home' | 'settings'>('home')
 const bookmarkPath = ref('')
@@ -48,7 +50,7 @@ const uiSettings = ref<BookmarkUiSettings>({
   showRecentOpened: true,
   showOpenCount: true,
   themeMode: 'system',
-  windowHeight: 640,
+  windowHeight: DEFAULT_WINDOW_HEIGHT,
 })
 const prefersDark = ref(false)
 const pinnedMap = ref<PinnedBookmarkMap>({})
@@ -167,7 +169,7 @@ function syncSubInput() {
       searchQuery.value = String(text || '')
       highlightedIndex.value = 0
     },
-    '搜索书签标题、网址或目录',
+    '搜索书签标题、网址或目录，标题支持全拼和拼音首字母',
     true,
   )
 
@@ -178,33 +180,33 @@ function syncSubInput() {
 
 // 键盘导航始终对当前可见卡片生效，回车直接复用同一套打开逻辑。
 function handleWindowKeydown(event: KeyboardEvent) {
-  if (currentView.value !== 'home' || loading.value || homeError.value) {
-    return
-  }
-  if (event.metaKey || event.ctrlKey || event.altKey) {
-    return
-  }
-
   const entries = visibleEntries.value
-  if (!entries.length) {
-    return
+  const result = getKeyboardNavigationResult({
+    key: event.key,
+    currentView: currentView.value,
+    loading: loading.value,
+    hasError: Boolean(homeError.value),
+    highlightedIndex: highlightedIndex.value,
+    entryCount: entries.length,
+    metaKey: event.metaKey,
+    ctrlKey: event.ctrlKey,
+    altKey: event.altKey,
+  })
+
+  if (result.preventDefault) {
+    event.preventDefault()
   }
 
-  if (event.key === 'ArrowDown') {
-    event.preventDefault()
-    window.utools?.subInputBlur?.()
-    highlightedIndex.value = Math.min(highlightedIndex.value + 1, entries.length - 1)
-  } else if (event.key === 'ArrowUp') {
-    event.preventDefault()
-    window.utools?.subInputBlur?.()
-    highlightedIndex.value = Math.max(highlightedIndex.value - 1, 0)
-  } else if (event.key === 'Enter') {
-    event.preventDefault()
+  if (result.action === 'move') {
+    highlightedIndex.value = result.nextIndex
+  } else if (result.action === 'open-current') {
     const current = entries[highlightedIndex.value]
     if (current) {
       handleOpenBookmark(current.item)
     }
-  } else if (event.key === 'Escape') {
+  }
+
+  if (result.subInputBehavior === 'focus') {
     window.utools?.subInputFocus?.()
   }
 }
@@ -226,6 +228,26 @@ function loadBookmarks(nextPath = bookmarkPath.value, targetView: 'home' | 'sett
   }
 }
 
+// 把 uTools 里持久化的设置统一同步到当前界面，云端拉新配置时也复用这一套入口。
+function syncPersistedState(targetView: 'home' | 'settings' = currentView.value) {
+  const settings = window.services.getBookmarkSettings() as { chromeBookmarksPath: string }
+  const nextUiSettings = window.services.getBookmarkUiSettings() as BookmarkUiSettings
+  const nextPinnedMap = window.services.getPinnedBookmarks() as PinnedBookmarkMap
+  const nextRecentOpenedMap = window.services.getRecentOpenedBookmarks() as RecentOpenedMap
+  const nextBookmarkPath = settings.chromeBookmarksPath
+  const shouldReloadBookmarks = nextBookmarkPath !== bookmarkPath.value || !items.value.length
+
+  uiSettings.value = nextUiSettings
+  pinnedMap.value = nextPinnedMap
+  recentOpenedMap.value = nextRecentOpenedMap
+  applyPluginWindowHeight(nextUiSettings.windowHeight)
+  bookmarkPath.value = nextBookmarkPath
+
+  if (shouldReloadBookmarks) {
+    loadBookmarks(nextBookmarkPath, targetView)
+  }
+}
+
 // 初始化当前生效路径，并在插件真正进入时触发首次读取。
 function initializeApp() {
   currentView.value = 'home'
@@ -239,13 +261,7 @@ function initializeApp() {
     return
   }
 
-  const settings = window.services.getBookmarkSettings() as { chromeBookmarksPath: string }
-  uiSettings.value = window.services.getBookmarkUiSettings() as BookmarkUiSettings
-  pinnedMap.value = window.services.getPinnedBookmarks() as PinnedBookmarkMap
-  recentOpenedMap.value = window.services.getRecentOpenedBookmarks() as RecentOpenedMap
-  applyPluginWindowHeight(uiSettings.value.windowHeight)
-  bookmarkPath.value = settings.chromeBookmarksPath
-  loadBookmarks(settings.chromeBookmarksPath, 'home')
+  syncPersistedState('home')
   bootstrapped.value = true
   syncSubInput()
 }
@@ -478,6 +494,20 @@ onMounted(() => {
   window.utools.onPluginEnter(() => {
     initializeApp()
   })
+
+  // 云端同步把其他设备上的 dbStorage 拉回来后，立即把当前界面状态刷新成最新配置。
+  window.utools.onDbPull?.(() => {
+    if (!window.services) {
+      return
+    }
+
+    if (!bootstrapped.value) {
+      initializeApp()
+      return
+    }
+
+    syncPersistedState(currentView.value)
+  })
 })
 
 onBeforeUnmount(() => {
@@ -515,6 +545,7 @@ onBeforeUnmount(() => {
     :show-open-count="uiSettings.showOpenCount"
     :theme-mode="themeMode"
     :window-height="uiSettings.windowHeight"
+    :default-window-height="DEFAULT_WINDOW_HEIGHT"
     :saving="saving"
     :error="settingsError"
     @back="backToHome"

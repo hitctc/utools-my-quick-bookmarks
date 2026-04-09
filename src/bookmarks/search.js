@@ -1,5 +1,13 @@
+import { pinyin } from 'pinyin-pro'
+
+const TITLE_SEARCH_ALIAS_CACHE = new Map()
+
 function toSafeText(value) {
   return typeof value === 'string' ? value : value == null ? '' : String(value)
+}
+
+function normalizeAliasText(value) {
+  return toSafeText(value).trim().toLowerCase()
 }
 
 function toSearchTokens(tokens) {
@@ -7,11 +15,51 @@ function toSearchTokens(tokens) {
     return []
   }
 
-  return tokens.map(token => toSafeText(token).trim().toLowerCase()).filter(Boolean)
+  return tokens.map(token => normalizeAliasText(token)).filter(Boolean)
 }
 
 function tokenMatchesText(token, text) {
-  return toSafeText(text).toLowerCase().includes(token)
+  return normalizeAliasText(text).includes(token)
+}
+
+function hasChineseCharacter(text) {
+  return /[\u3400-\u9fff]/u.test(text)
+}
+
+// 标题拼音索引只在中文标题场景下生成，避免把英文标题也扩成额外搜索语义。
+function getTitleSearchAliases(title) {
+  const normalizedTitle = normalizeAliasText(title)
+
+  if (!normalizedTitle) {
+    return {
+      normalizedTitle: '',
+      fullPinyin: '',
+      initials: '',
+    }
+  }
+
+  const cachedAliases = TITLE_SEARCH_ALIAS_CACHE.get(normalizedTitle)
+  if (cachedAliases) {
+    return cachedAliases
+  }
+
+  const aliases = {
+    normalizedTitle,
+    fullPinyin: '',
+    initials: '',
+  }
+
+  if (hasChineseCharacter(normalizedTitle)) {
+    aliases.fullPinyin = normalizeAliasText(
+      pinyin(normalizedTitle, { toneType: 'none' }).replace(/\s+/g, ''),
+    )
+    aliases.initials = normalizeAliasText(
+      pinyin(normalizedTitle, { pattern: 'first', toneType: 'none' }).replace(/\s+/g, ''),
+    )
+  }
+
+  TITLE_SEARCH_ALIAS_CACHE.set(normalizedTitle, aliases)
+  return aliases
 }
 
 function buildStableSegments(text) {
@@ -151,10 +199,14 @@ export function getBookmarkSearchMeta(item, tokens) {
   const folderLabel = getBookmarkFolderLabel(item?.folderPath)
   const siteLabel = getBookmarkSiteLabel(url)
   const pathLabel = getBookmarkPathLabel(item?.folderPath, item?.sourceRoot)
+  const titleAliases = getTitleSearchAliases(title)
 
   const tokenMatches = searchTokens.map(token => ({
     token,
-    title: tokenMatchesText(token, title),
+    title:
+      tokenMatchesText(token, titleAliases.normalizedTitle)
+      || tokenMatchesText(token, titleAliases.fullPinyin)
+      || tokenMatchesText(token, titleAliases.initials),
     url: tokenMatchesText(token, url),
     folder: tokenMatchesText(token, folderLabel),
     site: tokenMatchesText(token, siteLabel),

@@ -3,6 +3,7 @@ const os = require('node:os')
 const {
   getDefaultChromeBookmarksPath,
   getEffectiveChromeBookmarksPath,
+  getReadableStoredChromeBookmarksPath,
   parseChromeBookmarksText,
 } = require('./chromeBookmarks.cjs')
 const {
@@ -18,12 +19,27 @@ const BOOKMARK_UI_SETTINGS_KEY = 'quick-bookmarks-ui-settings'
 const BOOKMARK_PINS_KEY = 'quick-bookmarks-pins'
 const BOOKMARK_RECENT_OPENED_KEY = 'quick-bookmarks-recent-opened'
 
+// 云端同步的路径在另一台设备上可能不存在，这里只做本机可读性判断，不改动同步数据本身。
+function canAccessBookmarksFile(filePath) {
+  if (!filePath) {
+    return false
+  }
+
+  try {
+    fs.accessSync(filePath, fs.constants.R_OK)
+    return true
+  } catch {
+    return false
+  }
+}
+
 // 读取本地保存的书签路径配置；如果用户还没配过，就回退到默认 Chrome 路径。
 function getBookmarkSettings() {
   const saved = window.utools.dbStorage.getItem(BOOKMARK_SETTINGS_KEY) || {}
-  const chromeBookmarksPath = getEffectiveChromeBookmarksPath(
+  const chromeBookmarksPath = getReadableStoredChromeBookmarksPath(
     os.homedir(),
     saved.chromeBookmarksPath,
+    canAccessBookmarksFile,
   )
 
   return {

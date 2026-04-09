@@ -68,6 +68,17 @@ const sectionsSignature = computed(() =>
     .join('|'),
 )
 
+// 卡片编号按当前首页实际渲染顺序连续计算，保证用户看到的顺序和编号一致。
+const sectionStartNumbers = computed(() => {
+  let nextNumber = 1
+
+  return (props.sections as BookmarkSection[]).reduce<Record<string, number>>((accumulator, section) => {
+    accumulator[section.key] = nextNumber
+    nextNumber += section.entries.length
+    return accumulator
+  }, {})
+})
+
 // 键盘高亮项变化后，把对应卡片滚动到当前可视区域内。
 async function scrollHighlightedCardIntoView(cardKey: string) {
   if (!cardKey) {
@@ -112,7 +123,7 @@ onMounted(() => {
     <section v-else-if="!props.sections.length" class="state-card" ref="homeContentRef">
       <p>{{ props.emptyText || '当前没有可展示的书签结果。' }}</p>
     </section>
-    <div v-else ref="homeContentRef">
+    <div v-else ref="homeContentRef" class="home-sections">
       <BookmarksSection
         v-for="section in (props.sections as BookmarkSection[])"
         :key="section.key"
@@ -121,15 +132,16 @@ onMounted(() => {
       >
         <div class="bookmark-grid">
           <article
-            v-for="entry in section.entries"
+            v-for="(entry, index) in section.entries"
             :key="entry.cardKey"
             class="bookmark-grid__item"
             :data-card-key="entry.cardKey"
           >
             <BookmarkCard
               :item="entry.item"
+              :display-number="sectionStartNumbers[section.key] + index"
               :show-open-count="props.showOpenCount"
-              :active="entry.cardKey === props.highlightedCardKey"
+              :keyboard-active="entry.cardKey === props.highlightedCardKey"
               :search-tokens="searchTokens"
               @open="emit('open-bookmark', $event)"
               @toggle-pin="emit('toggle-pin', $event)"

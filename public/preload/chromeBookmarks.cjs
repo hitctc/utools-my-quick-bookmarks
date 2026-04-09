@@ -19,6 +19,16 @@ function getEffectiveChromeBookmarksPath(homeDir, savedPath) {
   return trimmed || getDefaultChromeBookmarksPath(homeDir)
 }
 
+// 云端同步过来的路径在当前设备上可能并不存在，所以这里按设备本地可读性兜底。
+function getReadableStoredChromeBookmarksPath(homeDir, savedPath, canAccessPath) {
+  const trimmed = typeof savedPath === 'string' ? savedPath.trim() : ''
+  if (trimmed && typeof canAccessPath === 'function' && canAccessPath(trimmed)) {
+    return trimmed
+  }
+
+  return getDefaultChromeBookmarksPath(homeDir)
+}
+
 // 递归展开 Chrome 书签树，只保留真正的 url 叶子节点。
 function flattenNodes(nodes, sourceRoot, folderPath = []) {
   if (!Array.isArray(nodes) || nodes.length === 0) {
@@ -70,5 +80,6 @@ function parseChromeBookmarksText(text) {
 module.exports = {
   getDefaultChromeBookmarksPath,
   getEffectiveChromeBookmarksPath,
+  getReadableStoredChromeBookmarksPath,
   parseChromeBookmarksText,
 }

@@ -110,6 +110,24 @@ test('normalizeUiSettings falls back to default window height for invalid values
   })
 })
 
+test('normalizeUiSettings clamps window height into the supported slider range', () => {
+  const lowResult = normalizeUiSettings({ windowHeight: 240 })
+  const highResult = normalizeUiSettings({ windowHeight: 1200 })
+
+  assert.deepEqual(lowResult, {
+    showRecentOpened: true,
+    showOpenCount: true,
+    themeMode: 'system',
+    windowHeight: 480,
+  })
+  assert.deepEqual(highResult, {
+    showRecentOpened: true,
+    showOpenCount: true,
+    themeMode: 'system',
+    windowHeight: 960,
+  })
+})
+
 test('normalizePinnedBookmarkMap drops invalid bookmark ids and timestamps', () => {
   const result = normalizePinnedBookmarkMap({
     a: 100,

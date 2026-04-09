@@ -5,9 +5,10 @@ const props = defineProps<{
   title: string
   siteLabel: string
   pathLabel: string
+  displayNumber: number
   openCount: number
   showOpenCount: boolean
-  active: boolean
+  keyboardActive: boolean
   urlOnlyMatch: boolean
   titleSegments: Array<{ text: string; matched: boolean }>
   siteSegments: Array<{ text: string; matched: boolean }>
@@ -30,8 +31,9 @@ const stablePathSegments = computed(() => getStableSegments(props.pathSegments, 
 </script>
 
 <template>
-  <div class="bookmark-cover" :class="{ 'bookmark-cover--active': active }">
+  <div class="bookmark-cover" :class="{ 'bookmark-cover--keyboard-active': keyboardActive }">
     <div class="bookmark-cover__meta-row">
+      <span class="bookmark-cover__index" :title="`编号 ${displayNumber}`">{{ displayNumber }}</span>
       <p class="bookmark-cover__site" :title="siteLabel">
         <template v-for="(segment, index) in stableSiteSegments" :key="`site-${index}`">
           <mark v-if="segment.matched" class="bookmark-cover__highlight">{{ segment.text }}</mark>
@@ -50,9 +52,9 @@ const stablePathSegments = computed(() => getStableSegments(props.pathSegments, 
     </div>
 
     <div class="bookmark-cover__footer">
-      <span class="bookmark-cover__path" :title="pathLabel">
+      <span class="bookmark-cover__path">
         <span class="bookmark-cover__path-label">路径</span>
-        <span class="bookmark-cover__path-value">
+        <span class="bookmark-cover__path-value" :title="pathLabel">
           <template v-for="(segment, index) in stablePathSegments" :key="`path-${index}`">
             <mark v-if="segment.matched" class="bookmark-cover__highlight">{{ segment.text }}</mark>
             <span v-else>{{ segment.text }}</span>

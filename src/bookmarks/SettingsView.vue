@@ -1,5 +1,9 @@
 <script lang="ts" setup>
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
+
+const WINDOW_HEIGHT_MIN = 480
+const WINDOW_HEIGHT_MAX = 960
+const WINDOW_HEIGHT_STEP = 20
 
 const props = defineProps({
   modelValue: {
@@ -22,6 +26,10 @@ const props = defineProps({
     type: Number,
     required: true,
   },
+  defaultWindowHeight: {
+    type: Number,
+    required: true,
+  },
   saving: {
     type: Boolean,
     required: true,
@@ -35,6 +43,13 @@ const props = defineProps({
 const emit = defineEmits(['back', 'save', 'reset', 'reload', 'change-ui-settings'])
 const localPath = ref(props.modelValue)
 const localWindowHeight = ref(String(props.windowHeight))
+const resetWindowHeightLabel = computed(() => `恢复默认高度（${props.defaultWindowHeight} px）`)
+const rangeProgress = computed(() => {
+  const height = Number(localWindowHeight.value)
+  const safeHeight = Number.isFinite(height) ? height : props.windowHeight
+  const progress = ((safeHeight - WINDOW_HEIGHT_MIN) / (WINDOW_HEIGHT_MAX - WINDOW_HEIGHT_MIN)) * 100
+  return `${Math.min(Math.max(progress, 0), 100)}%`
+})
 watch(
   () => props.modelValue,
   value => {
@@ -58,6 +73,21 @@ function emitReload() {
   emit('reload', localPath.value)
 }
 
+// 选择文件只负责把系统文件选择结果回填到输入框，不在这里直接触发保存。
+function pickBookmarkFile() {
+  const files = window.utools?.showOpenDialog?.({
+    title: '选择 Chrome Bookmarks 文件',
+    buttonLabel: '使用这个文件',
+    properties: ['openFile'],
+  })
+
+  if (!Array.isArray(files) || !files[0]) {
+    return
+  }
+
+  localPath.value = String(files[0])
+}
+
 // 设置页的展示开关即时生效，不要求用户额外点保存按钮。
 function emitUiSettingChange(key: 'showRecentOpened' | 'showOpenCount', checked: boolean) {
   emit('change-ui-settings', { [key]: checked })
@@ -76,6 +106,11 @@ function emitWindowHeightChange(rawValue: string) {
   emit('change-ui-settings', {
     windowHeight: Number.isFinite(parsedHeight) && parsedHeight > 0 ? parsedHeight : undefined,
   })
+}
+
+// 恢复默认高度时沿用现有设置归一化逻辑，不额外维护第二份默认值。
+function emitResetWindowHeight() {
+  emit('change-ui-settings', { windowHeight: undefined })
 }
 </script>
 
@@ -99,12 +134,11 @@ function emitWindowHeightChange(rawValue: string) {
           <div class="settings-hero__content">
             <h1>设置与展示偏好</h1>
             <p class="settings-copy">
-              当前只支持 macOS 下的 Google Chrome 默认 profile。首页直接展示书签结果，搜索请继续使用
-              uTools 顶部输入框，多个关键词用空格分开。
+              目前仅支持 macOS 下的 Chrome 默认 profile。首页直接显示书签；搜索请使用 uTools 顶部输入框，多个关键词用空格分隔。
             </p>
           </div>
           <p class="settings-note">
-            如果你使用的不是 Default profile，把路径改成对应的 Bookmarks 文件后再保存或刷新。
+            如果不是默认 profile，请将路径改为对应的 Bookmarks 文件后保存或刷新。
           </p>
         </div>
       </header>
@@ -122,16 +156,26 @@ function emitWindowHeightChange(rawValue: string) {
           </div>
 
           <label class="field-label" for="bookmark-path">当前读取路径</label>
-          <input
-            id="bookmark-path"
-            v-model="localPath"
-            class="path-input"
-            type="text"
-            placeholder="/Users/你的用户名/Library/Application Support/Google/Chrome/Default/Bookmarks"
-          />
+          <div class="path-field">
+            <input
+              id="bookmark-path"
+              v-model="localPath"
+              class="path-input path-field__input"
+              type="text"
+              placeholder="/Users/你的用户名/Library/Application Support/Google/Chrome/Default/Bookmarks"
+            />
+            <button
+              type="button"
+              class="secondary-button path-field__button"
+              :disabled="saving"
+              @click="pickBookmarkFile"
+            >
+              选择文件
+            </button>
+          </div>
 
           <p v-if="error" class="field-error">错误：{{ error }}</p>
-          <p v-else class="field-hint">保存会先校验路径并重新读取，成功后才会回到首页。</p>
+          <p v-else class="field-hint">可以手填路径，也可以点右侧按钮直接选择本地 Bookmarks 文件。</p>
 
           <div class="actions-row actions-row--path">
             <button class="primary-button" :disabled="saving" @click="emitSave">保存并读取</button>
@@ -188,17 +232,31 @@ function emitWindowHeightChange(rawValue: string) {
 
           <label class="field-label" for="window-height">高度</label>
           <p class="field-hint">uTools 主插件窗口目前只支持设置高度，不支持单独设置宽度。</p>
-          <input
-            id="window-height"
-            v-model="localWindowHeight"
-            class="path-input"
-            type="number"
-            min="1"
-            step="1"
-            inputmode="numeric"
-            placeholder="640"
-            @change="emitWindowHeightChange(($event.target as HTMLInputElement).value)"
-          />
+          <div class="range-control" :style="{ '--range-progress': rangeProgress }">
+            <div class="range-control__header">
+              <p class="mono-label">当前高度</p>
+              <span class="status-chip">{{ localWindowHeight }} px</span>
+            </div>
+            <input
+              id="window-height"
+              v-model="localWindowHeight"
+              class="range-control__input"
+              type="range"
+              :min="WINDOW_HEIGHT_MIN"
+              :max="WINDOW_HEIGHT_MAX"
+              :step="WINDOW_HEIGHT_STEP"
+              @input="emitWindowHeightChange(($event.target as HTMLInputElement).value)"
+            />
+            <div class="range-control__bounds" aria-hidden="true">
+              <span>{{ WINDOW_HEIGHT_MIN }} px</span>
+              <span>{{ WINDOW_HEIGHT_MAX }} px</span>
+            </div>
+            <div class="range-control__actions">
+              <button type="button" class="secondary-button range-control__reset" @click="emitResetWindowHeight">
+                {{ resetWindowHeightLabel }}
+              </button>
+            </div>
+          </div>
         </section>
 
         <section class="settings-group settings-group--compact settings-group--display">

@@ -7,12 +7,13 @@ import type { BookmarkCardItem } from '../types'
 const props = withDefaults(
   defineProps<{
     item: BookmarkCardItem
-    active?: boolean
+    displayNumber: number
+    keyboardActive?: boolean
     showOpenCount?: boolean
     searchTokens?: string[]
   }>(),
   {
-    active: false,
+    keyboardActive: false,
     showOpenCount: true,
     searchTokens: () => [],
   },
@@ -40,7 +41,7 @@ function handleTogglePin(event: MouseEvent) {
 </script>
 
 <template>
-  <article class="bookmark-card" :class="{ 'bookmark-card--active': active }">
+  <article class="bookmark-card" :class="{ 'bookmark-card--keyboard-active': keyboardActive }">
     <button
       type="button"
       class="bookmark-card__pin"
@@ -58,9 +59,10 @@ function handleTogglePin(event: MouseEvent) {
         :title="searchMeta.title"
         :site-label="searchMeta.siteLabel"
         :path-label="searchMeta.pathLabel"
+        :display-number="displayNumber"
         :open-count="item.openCount"
         :show-open-count="showOpenCount"
-        :active="active"
+        :keyboard-active="keyboardActive"
         :url-only-match="searchMeta.urlOnlyMatch"
         :title-segments="searchMeta.highlightedTitleSegments"
         :site-segments="searchMeta.highlightedSiteSegments"

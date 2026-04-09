@@ -6,6 +6,7 @@ const require = createRequire(import.meta.url)
 const {
   getDefaultChromeBookmarksPath,
   getEffectiveChromeBookmarksPath,
+  getReadableStoredChromeBookmarksPath,
   parseChromeBookmarksText,
 } = require('../../public/preload/chromeBookmarks.cjs')
 
@@ -26,6 +27,29 @@ test('getEffectiveChromeBookmarksPath prefers saved path when non-empty', () => 
 
 test('getEffectiveChromeBookmarksPath falls back to default path when saved path is empty', () => {
   const result = getEffectiveChromeBookmarksPath('/Users/demo', '   ')
+
+  assert.equal(
+    result,
+    '/Users/demo/Library/Application Support/Google/Chrome/Default/Bookmarks',
+  )
+})
+
+test('getReadableStoredChromeBookmarksPath keeps a synced path when it is readable on current device', () => {
+  const result = getReadableStoredChromeBookmarksPath(
+    '/Users/demo',
+    '  /tmp/custom-bookmarks  ',
+    filePath => filePath === '/tmp/custom-bookmarks',
+  )
+
+  assert.equal(result, '/tmp/custom-bookmarks')
+})
+
+test('getReadableStoredChromeBookmarksPath falls back to default when synced path is not readable on current device', () => {
+  const result = getReadableStoredChromeBookmarksPath(
+    '/Users/demo',
+    '/Volumes/Other-Mac/Chrome/Bookmarks',
+    () => false,
+  )
 
   assert.equal(
     result,
