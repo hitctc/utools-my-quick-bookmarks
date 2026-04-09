@@ -263,9 +263,9 @@ a {
   left: auto;
   z-index: 6;
   display: flex;
-  align-items: flex-end;
+  align-items: stretch;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 8px;
   max-width: calc(100vw - 36px);
   pointer-events: none;
 }
@@ -278,25 +278,30 @@ a {
 .state-strip {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
+  min-height: 40px;
   max-width: min(560px, calc(100vw - 92px));
-  padding: 9px 11px;
-  border: 1px solid color-mix(in srgb, var(--text-primary) 16%, var(--border));
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--surface-raised) 98%, var(--surface));
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--text-primary) 28%, var(--border-visible));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-raised) 99%, var(--surface));
 }
 
 .state-strip__chips {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 6px;
   min-width: 0;
 }
 
 .home-dock__settings {
-  border-color: color-mix(in srgb, var(--text-primary) 18%, var(--border-visible));
-  background: color-mix(in srgb, var(--surface-raised) 98%, var(--surface));
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0 10px;
+  border-radius: 14px;
+  border-color: color-mix(in srgb, var(--text-primary) 28%, var(--border-visible));
+  background: color-mix(in srgb, var(--surface-raised) 99%, var(--surface));
 }
 
 .bookmarks-section {

@@ -142,7 +142,6 @@ onMounted(() => {
     <div v-if="bootstrapped && !loading && !error" class="home-dock">
       <section class="state-strip">
         <div class="state-strip__chips">
-          <span class="status-chip">书签 {{ total }}</span>
           <span class="status-chip status-chip--muted">{{ themeStatus }}</span>
           <span v-if="isSearchMode" class="status-chip status-chip--muted">搜索中</span>
           <span class="status-chip status-chip--muted">上下键选</span>
