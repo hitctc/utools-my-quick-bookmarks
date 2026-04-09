@@ -59,20 +59,19 @@ function emitThemeModeChange(themeMode: 'system' | 'dark' | 'light') {
 </script>
 
 <template>
-  <section class="page-shell">
-    <header class="settings-header">
-      <button
-        type="button"
-        class="icon-button icon-button--back"
-        aria-label="返回首页"
-        title="返回首页"
-        @click="emit('back')"
-      >
-        <span class="icon-button__glyph" aria-hidden="true">←</span>
-        <span class="icon-button__label">首页</span>
-      </button>
-      <p class="section-label">设置</p>
-    </header>
+  <section class="page-shell page-shell--settings">
+    <button
+      type="button"
+      class="icon-button icon-button--back floating-action-button settings-floating-action"
+      aria-label="返回首页"
+      title="返回首页"
+      @click="emit('back')"
+    >
+      <span class="icon-button__glyph" aria-hidden="true">←</span>
+      <span class="icon-button__label">首页</span>
+    </button>
+
+    <p class="section-label settings-shell__label">设置</p>
 
     <section class="settings-card">
       <h1>Chrome 书签文件</h1>

@@ -82,6 +82,11 @@ a {
   padding-bottom: 92px;
 }
 
+.page-shell--settings {
+  position: relative;
+  padding-top: 78px;
+}
+
 .state-card,
 .settings-card,
 .bookmarks-section,
@@ -255,12 +260,13 @@ a {
   position: fixed;
   right: 18px;
   bottom: 18px;
-  left: 18px;
+  left: auto;
   z-index: 6;
   display: flex;
   align-items: flex-end;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 10px;
+  max-width: calc(100vw - 36px);
   pointer-events: none;
 }
 
@@ -274,11 +280,11 @@ a {
   align-items: center;
   gap: 8px;
   min-width: 0;
-  max-width: calc(100% - 56px);
-  padding: 8px 10px;
-  border: 1px solid var(--border);
+  max-width: min(560px, calc(100vw - 92px));
+  padding: 9px 11px;
+  border: 1px solid color-mix(in srgb, var(--text-primary) 16%, var(--border));
   border-radius: 12px;
-  background: color-mix(in srgb, var(--surface-raised) 92%, var(--surface));
+  background: color-mix(in srgb, var(--surface-raised) 98%, var(--surface));
 }
 
 .state-strip__chips {
@@ -286,6 +292,11 @@ a {
   flex-wrap: wrap;
   gap: 6px;
   min-width: 0;
+}
+
+.home-dock__settings {
+  border-color: color-mix(in srgb, var(--text-primary) 18%, var(--border-visible));
+  background: color-mix(in srgb, var(--surface-raised) 98%, var(--surface));
 }
 
 .bookmarks-section {
@@ -364,8 +375,7 @@ a {
   color: var(--bg);
 }
 
-.bookmarks-section__header,
-.settings-header {
+.bookmarks-section__header {
   min-width: 0;
 }
 
@@ -602,11 +612,18 @@ a {
   letter-spacing: 0.04em;
 }
 
-.settings-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+.settings-floating-action {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  z-index: 4;
+}
+
+.settings-shell__label {
+  position: absolute;
+  top: 30px;
+  right: 18px;
+  z-index: 3;
 }
 
 .settings-card {
@@ -697,13 +714,16 @@ a {
     padding: 16px;
   }
 
-  .bookmarks-section__header,
-  .settings-header {
+  .bookmarks-section__header {
     align-items: stretch;
   }
 
   .page-shell--home {
     padding-bottom: 88px;
+  }
+
+  .page-shell--settings {
+    padding-top: 72px;
   }
 
   .bookmark-grid {
@@ -718,11 +738,21 @@ a {
   .home-dock {
     right: 16px;
     bottom: 16px;
-    left: 16px;
+    max-width: calc(100vw - 32px);
   }
 
   .state-strip {
-    max-width: calc(100% - 52px);
+    max-width: min(420px, calc(100vw - 84px));
+  }
+
+  .settings-floating-action {
+    top: 16px;
+    left: 16px;
+  }
+
+  .settings-shell__label {
+    top: 28px;
+    right: 16px;
   }
 
   .actions-row > button {

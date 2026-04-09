@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import HomeView from './bookmarks/HomeView.vue'
 import SettingsView from './bookmarks/SettingsView.vue'
 import {
@@ -287,6 +287,24 @@ function changeUiSettings(patch: BookmarkUiSettingsPatch) {
   uiSettings.value = window.services.saveBookmarkUiSettings(patch) as BookmarkUiSettings
 }
 
+// 视图切换后把滚动位置归顶，避免设置页从中间位置开始显示。
+async function scrollViewportToTop() {
+  await nextTick()
+  window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  document.scrollingElement?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+}
+
+// 打开设置页时先切视图，再把页面滚动位置重置到顶部。
+function openSettingsView() {
+  currentView.value = 'settings'
+  void scrollViewportToTop()
+}
+
+// 从设置页返回首页时也走统一切换入口，避免状态和滚动分叉。
+function backToHome() {
+  currentView.value = 'home'
+}
+
 // 置顶只影响插件内展示顺序，不会改 Chrome 源书签文件。
 function handleTogglePin(item: BookmarkCardItem) {
   pinnedMap.value = window.services.togglePinnedBookmarkState(item.id) as PinnedBookmarkMap
@@ -476,7 +494,7 @@ onBeforeUnmount(() => {
     :total="total"
     @open-bookmark="handleOpenBookmark"
     @toggle-pin="handleTogglePin"
-    @open-settings="currentView = 'settings'"
+    @open-settings="openSettingsView"
   />
   <SettingsView
     v-else
@@ -486,7 +504,7 @@ onBeforeUnmount(() => {
     :theme-mode="themeMode"
     :saving="saving"
     :error="settingsError"
-    @back="currentView = 'home'"
+    @back="backToHome"
     @save="saveSettings"
     @reset="resetSettings"
     @reload="reloadFromSettings"
