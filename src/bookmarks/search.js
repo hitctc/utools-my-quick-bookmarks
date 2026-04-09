@@ -65,11 +65,20 @@ export function getBookmarkPathLabel(url) {
     return '未定位'
   }
 
+  function formatPathname(pathname) {
+    const segments = toSafeText(pathname)
+      .split('/')
+      .map(segment => segment.trim())
+      .filter(Boolean)
+
+    return segments.length ? segments.join(' / ') : '首页'
+  }
+
   try {
     const parsedUrl = new URL(text)
-    return parsedUrl.pathname || '/'
+    return formatPathname(parsedUrl.pathname)
   } catch {
-    return text.startsWith('/') ? text : '未定位'
+    return text.startsWith('/') ? formatPathname(text) : '未定位'
   }
 }
 

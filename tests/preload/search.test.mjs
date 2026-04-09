@@ -24,8 +24,9 @@ test('getBookmarkFolderLabel returns 未分类 for an empty folder path', () => 
 })
 
 test('getBookmarkPathLabel returns the URL pathname and falls back when location is missing', () => {
-  assert.equal(getBookmarkPathLabel('https://example.com/team/guide?tab=1'), '/team/guide')
-  assert.equal(getBookmarkPathLabel('https://example.com'), '/')
+  assert.equal(getBookmarkPathLabel('https://example.com/team/guide?tab=1'), 'team / guide')
+  assert.equal(getBookmarkPathLabel('https://example.com/images/create/'), 'images / create')
+  assert.equal(getBookmarkPathLabel('https://example.com'), '首页')
   assert.equal(getBookmarkPathLabel(''), '未定位')
 })
 
@@ -51,7 +52,7 @@ test('getBookmarkSearchMeta uses AND semantics across title, url, folder path, a
   assert.equal(meta.title, 'Alpha Roadmap')
   assert.equal(meta.folderLabel, 'Projects / Planning')
   assert.equal(meta.siteLabel, 'docs.example.com')
-  assert.equal(meta.pathLabel, '/team/guide')
+  assert.equal(meta.pathLabel, 'team / guide')
   assert.deepEqual(meta.highlightedTitleSegments, [
     { text: 'Alpha', matched: true },
     { text: ' Roadmap', matched: false },

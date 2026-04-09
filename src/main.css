@@ -219,7 +219,7 @@ a {
 }
 
 .floating-action-button {
-  background: color-mix(in srgb, var(--surface-raised) 94%, var(--surface));
+  background: var(--surface-raised);
 }
 
 .primary-button {
@@ -285,7 +285,7 @@ a {
   padding: 0 10px;
   border: 1px solid color-mix(in srgb, var(--text-primary) 28%, var(--border-visible));
   border-radius: 14px;
-  background: color-mix(in srgb, var(--surface-raised) 99%, var(--surface));
+  background: var(--surface-raised);
 }
 
 .state-strip__chips {
@@ -301,7 +301,7 @@ a {
   padding: 0 10px;
   border-radius: 14px;
   border-color: color-mix(in srgb, var(--text-primary) 28%, var(--border-visible));
-  background: color-mix(in srgb, var(--surface-raised) 99%, var(--surface));
+  background: var(--surface-raised);
 }
 
 .bookmarks-section {
