@@ -4,6 +4,7 @@ import { createRequire } from 'node:module'
 
 const require = createRequire(import.meta.url)
 const {
+  normalizeBookmarkCache,
   normalizeUiSettings,
   normalizePinnedBookmarkMap,
   normalizeRecentOpenedMap,
@@ -12,6 +13,85 @@ const {
   sortBookmarksByPinnedAndOrder,
   sortBookmarksByRecentOpen,
 } = require('../../public/preload/localState.cjs')
+
+test('normalizeBookmarkCache keeps valid cache data and sanitizes bookmark items', () => {
+  const result = normalizeBookmarkCache({
+    filePath: '  /Users/test/Bookmarks  ',
+    total: '999',
+    cachedAt: '1710000000000',
+    items: [
+      {
+        id: ' 1 ',
+        url: ' https://example.com ',
+        sourceRoot: ' bookmark_bar ',
+        folderPath: ['  Root  ', '', null, ' Sub '],
+        dateAdded: ' 1710000000001 ',
+        title: ' Example ',
+      },
+      {
+        id: '2',
+        url: 'https://example.org',
+        sourceRoot: 'other',
+        folderPath: 'not-an-array',
+        dateAdded: 123,
+        title: 456,
+      },
+      {
+        id: '',
+        url: 'https://invalid.test',
+        sourceRoot: 'synced',
+      },
+    ],
+  })
+
+  assert.deepEqual(result, {
+    filePath: '/Users/test/Bookmarks',
+    total: 2,
+    cachedAt: 1710000000000,
+    items: [
+      {
+        id: '1',
+        url: 'https://example.com',
+        sourceRoot: 'bookmark_bar',
+        folderPath: ['Root', 'Sub'],
+        dateAdded: '1710000000001',
+        title: 'Example',
+      },
+      {
+        id: '2',
+        url: 'https://example.org',
+        sourceRoot: 'other',
+        folderPath: [],
+        dateAdded: '',
+        title: '',
+      },
+    ],
+  })
+})
+
+test('normalizeBookmarkCache returns null for unusable cache payloads', () => {
+  const missingFilePath = normalizeBookmarkCache({
+    cachedAt: 1710000000000,
+    items: [
+      { id: '1', url: 'https://example.com', sourceRoot: 'bookmark_bar' },
+    ],
+  })
+  const missingTimestamp = normalizeBookmarkCache({
+    filePath: '/Users/test/Bookmarks',
+    items: [
+      { id: '1', url: 'https://example.com', sourceRoot: 'bookmark_bar' },
+    ],
+  })
+  const missingItems = normalizeBookmarkCache({
+    filePath: '/Users/test/Bookmarks',
+    cachedAt: 1710000000000,
+    items: [{ id: '', url: '', sourceRoot: '' }],
+  })
+
+  assert.equal(missingFilePath, null)
+  assert.equal(missingTimestamp, null)
+  assert.equal(missingItems, null)
+})
 
 test('normalizeUiSettings merges saved settings with defaults', () => {
   const result = normalizeUiSettings({ showRecentOpened: false })

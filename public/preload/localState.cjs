@@ -9,6 +9,58 @@ const WINDOW_HEIGHT_MAX = 960
 
 const VALID_THEME_MODES = new Set(['system', 'dark', 'light'])
 
+// 缓存里的单个书签条目必须保留最基本的可用字段，方便前端直接消费。
+function normalizeBookmarkCacheItem(raw) {
+  const data = raw && typeof raw === 'object' ? raw : {}
+  const id = typeof data.id === 'string' ? data.id.trim() : ''
+  const url = typeof data.url === 'string' ? data.url.trim() : ''
+  const sourceRoot = typeof data.sourceRoot === 'string' ? data.sourceRoot.trim() : ''
+
+  if (!id || !url || !sourceRoot) {
+    return null
+  }
+
+  const folderPath = Array.isArray(data.folderPath)
+    ? data.folderPath
+        .filter(segment => typeof segment === 'string' && segment.trim())
+        .map(segment => segment.trim())
+    : []
+  const title = typeof data.title === 'string' ? data.title.trim() : ''
+  const dateAdded = typeof data.dateAdded === 'string' ? data.dateAdded.trim() : ''
+
+  return {
+    id,
+    url,
+    sourceRoot,
+    folderPath,
+    title,
+    dateAdded,
+  }
+}
+
+// 书签缓存用于秒开首页，所以这里会把脏结构统一清理成稳定对象。
+function normalizeBookmarkCache(raw) {
+  const data = raw && typeof raw === 'object' ? raw : {}
+  const filePath = typeof data.filePath === 'string' ? data.filePath.trim() : ''
+  const cachedAt = Math.floor(Number(data.cachedAt))
+  const items = Array.isArray(data.items)
+    ? data.items
+        .map(normalizeBookmarkCacheItem)
+        .filter(Boolean)
+    : []
+
+  if (!filePath || !Number.isFinite(cachedAt) || cachedAt <= 0 || !items.length) {
+    return null
+  }
+
+  return {
+    filePath,
+    total: items.length,
+    items,
+    cachedAt,
+  }
+}
+
 // 统一把设置对象补齐为前端可以直接消费的开关结构。
 function normalizeUiSettings(raw) {
   const data = raw && typeof raw === 'object' ? raw : {}
@@ -155,6 +207,7 @@ function sortBookmarksByRecentOpen(items, recentMap) {
 
 module.exports = {
   DEFAULT_UI_SETTINGS,
+  normalizeBookmarkCache,
   normalizeUiSettings,
   normalizePinnedBookmarkMap,
   normalizeRecentOpenedMap,

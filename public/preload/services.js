@@ -1,5 +1,6 @@
 const fs = require('node:fs')
 const os = require('node:os')
+const path = require('node:path')
 const {
   getDefaultChromeBookmarksPath,
   getEffectiveChromeBookmarksPath,
@@ -8,6 +9,7 @@ const {
 } = require('./chromeBookmarks.cjs')
 const {
   normalizeUiSettings,
+  normalizeBookmarkCache,
   normalizePinnedBookmarkMap,
   normalizeRecentOpenedMap,
   togglePinnedBookmark,
@@ -18,6 +20,11 @@ const BOOKMARK_SETTINGS_KEY = 'quick-bookmarks-settings'
 const BOOKMARK_UI_SETTINGS_KEY = 'quick-bookmarks-ui-settings'
 const BOOKMARK_PINS_KEY = 'quick-bookmarks-pins'
 const BOOKMARK_RECENT_OPENED_KEY = 'quick-bookmarks-recent-opened'
+
+// 书签缓存只用于本机秒开首页，不走 uTools 同步数据库，避免整份书签被同步到其他设备。
+function getBookmarkCacheFilePath() {
+  return path.join(os.homedir(), 'Library', 'Caches', 'utools-my-quick-bookmarks', 'bookmark-cache.json')
+}
 
 // 云端同步的路径在另一台设备上可能不存在，这里只做本机可读性判断，不改动同步数据本身。
 function canAccessBookmarksFile(filePath) {
@@ -61,6 +68,55 @@ function saveBookmarkSettings(chromeBookmarksPath) {
 function resetBookmarkSettings() {
   window.utools.dbStorage.removeItem(BOOKMARK_SETTINGS_KEY)
   return getBookmarkSettings()
+}
+
+// 缓存只保留最近一次成功读取的书签树，失败时不要动旧数据。
+function getBookmarkCache() {
+  try {
+    const filePath = getBookmarkCacheFilePath()
+    if (!fs.existsSync(filePath)) {
+      return null
+    }
+
+    const text = fs.readFileSync(filePath, { encoding: 'utf-8' })
+    return normalizeBookmarkCache(JSON.parse(text))
+  } catch {
+    return null
+  }
+}
+
+// 写入缓存时先归一化并落到本机缓存目录，写失败也不能影响主读取流程。
+function saveBookmarkCache(rawCache) {
+  const normalized = normalizeBookmarkCache({
+    ...(rawCache && typeof rawCache === 'object' ? rawCache : {}),
+    cachedAt: Number((rawCache && typeof rawCache === 'object' && rawCache.cachedAt) || Date.now()),
+  })
+
+  if (!normalized) {
+    return null
+  }
+
+  try {
+    const filePath = getBookmarkCacheFilePath()
+    fs.mkdirSync(path.dirname(filePath), { recursive: true })
+    fs.writeFileSync(filePath, JSON.stringify(normalized), { encoding: 'utf-8' })
+    return normalized
+  } catch {
+    return null
+  }
+}
+
+// 清空缓存只影响书签秒开数据，不动路径和其他 UI 状态。
+function clearBookmarkCache() {
+  try {
+    const filePath = getBookmarkCacheFilePath()
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath)
+    }
+  } catch {
+    // 清缓存失败不影响主流程。
+  }
+  return null
 }
 
 // 首页展示相关的开关和路径配置分开存，避免后续扩展时互相覆盖。
@@ -143,11 +199,13 @@ function loadChromeBookmarks(bookmarkPath) {
     throw new Error('已读取文件，但没有解析出任何书签')
   }
 
-  return {
+  const result = {
     filePath,
     total: parsed.total,
     items: parsed.items,
   }
+
+  return result
 }
 
 // 通过 window 对象向渲染进程注入当前书签工具需要的本地能力。
@@ -158,6 +216,9 @@ window.services = {
   getBookmarkSettings,
   saveBookmarkSettings,
   resetBookmarkSettings,
+  getBookmarkCache,
+  saveBookmarkCache,
+  clearBookmarkCache,
   getBookmarkUiSettings,
   saveBookmarkUiSettings,
   getPinnedBookmarks,
