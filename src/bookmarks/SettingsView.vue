@@ -18,6 +18,10 @@ const props = defineProps({
     type: Boolean,
     required: true,
   },
+  windowHeight: {
+    type: Number,
+    required: true,
+  },
   saving: {
     type: Boolean,
     required: true,
@@ -30,10 +34,17 @@ const props = defineProps({
 
 const emit = defineEmits(['back', 'save', 'reset', 'reload', 'change-ui-settings'])
 const localPath = ref(props.modelValue)
+const localWindowHeight = ref(String(props.windowHeight))
 watch(
   () => props.modelValue,
   value => {
     localPath.value = value
+  },
+)
+watch(
+  () => props.windowHeight,
+  value => {
+    localWindowHeight.value = String(value)
   },
 )
 
@@ -55,6 +66,16 @@ function emitUiSettingChange(key: 'showRecentOpened' | 'showOpenCount', checked:
 // 主题模式只负责当前选项切换，不改动其他设置字段。
 function emitThemeModeChange(themeMode: 'system' | 'dark' | 'light') {
   emit('change-ui-settings', { themeMode })
+}
+
+// 窗口高度提交时统一转成正整数，非法输入交给上层回退到默认值。
+function emitWindowHeightChange(rawValue: string) {
+  const normalizedValue = rawValue.trim()
+  const parsedHeight = Math.floor(Number(normalizedValue))
+
+  emit('change-ui-settings', {
+    windowHeight: Number.isFinite(parsedHeight) && parsedHeight > 0 ? parsedHeight : undefined,
+  })
 }
 </script>
 
@@ -121,6 +142,20 @@ function emitThemeModeChange(themeMode: 'system' | 'dark' | 'light') {
           </button>
         </div>
       </div>
+
+      <label class="field-label" for="window-height">插件窗口高度</label>
+      <input
+        id="window-height"
+        v-model="localWindowHeight"
+        class="path-input"
+        type="number"
+        min="1"
+        step="1"
+        inputmode="numeric"
+        placeholder="640"
+        @change="emitWindowHeightChange(($event.target as HTMLInputElement).value)"
+      />
+      <p class="field-hint">uTools 主插件窗口目前只支持设置高度，不支持单独设置宽度。</p>
 
       <div class="settings-toggle-list">
         <label class="settings-toggle">

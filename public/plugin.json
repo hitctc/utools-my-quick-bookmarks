@@ -5,6 +5,9 @@
   "development": {
     "main": "http://localhost:5173"
   },
+  "pluginSetting": {
+    "height": 640
+  },
   "features": [
     {
       "code": "bookmarks",

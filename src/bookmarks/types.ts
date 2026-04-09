@@ -26,6 +26,7 @@ export interface BookmarkUiSettings {
   showRecentOpened: boolean
   showOpenCount: boolean
   themeMode: BookmarkThemeMode
+  windowHeight: number
 }
 
 export interface BookmarkCardEntry {

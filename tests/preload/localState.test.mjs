@@ -20,6 +20,7 @@ test('normalizeUiSettings merges saved settings with defaults', () => {
     showRecentOpened: false,
     showOpenCount: true,
     themeMode: 'system',
+    windowHeight: 640,
   })
 })
 
@@ -33,6 +34,7 @@ test('normalizeUiSettings keeps both recent-opened and open-count toggles', () =
     showRecentOpened: false,
     showOpenCount: false,
     themeMode: 'system',
+    windowHeight: 640,
   })
 })
 
@@ -44,11 +46,13 @@ test('normalizeUiSettings falls back to system theme mode for missing or invalid
     showRecentOpened: true,
     showOpenCount: true,
     themeMode: 'system',
+    windowHeight: 640,
   })
   assert.deepEqual(invalidResult, {
     showRecentOpened: true,
     showOpenCount: true,
     themeMode: 'system',
+    windowHeight: 640,
   })
 })
 
@@ -60,11 +64,49 @@ test('normalizeUiSettings preserves dark and light theme modes', () => {
     showRecentOpened: true,
     showOpenCount: true,
     themeMode: 'dark',
+    windowHeight: 640,
   })
   assert.deepEqual(lightResult, {
     showRecentOpened: true,
     showOpenCount: true,
     themeMode: 'light',
+    windowHeight: 640,
+  })
+})
+
+test('normalizeUiSettings preserves a valid window height', () => {
+  const result = normalizeUiSettings({ windowHeight: 720 })
+
+  assert.deepEqual(result, {
+    showRecentOpened: true,
+    showOpenCount: true,
+    themeMode: 'system',
+    windowHeight: 720,
+  })
+})
+
+test('normalizeUiSettings falls back to default window height for invalid values', () => {
+  const zeroResult = normalizeUiSettings({ windowHeight: 0 })
+  const negativeResult = normalizeUiSettings({ windowHeight: -120 })
+  const textResult = normalizeUiSettings({ windowHeight: 'bad' })
+
+  assert.deepEqual(zeroResult, {
+    showRecentOpened: true,
+    showOpenCount: true,
+    themeMode: 'system',
+    windowHeight: 640,
+  })
+  assert.deepEqual(negativeResult, {
+    showRecentOpened: true,
+    showOpenCount: true,
+    themeMode: 'system',
+    windowHeight: 640,
+  })
+  assert.deepEqual(textResult, {
+    showRecentOpened: true,
+    showOpenCount: true,
+    themeMode: 'system',
+    windowHeight: 640,
   })
 })
 

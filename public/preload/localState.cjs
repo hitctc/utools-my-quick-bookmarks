@@ -2,6 +2,7 @@ const DEFAULT_UI_SETTINGS = {
   showRecentOpened: true,
   showOpenCount: true,
   themeMode: 'system',
+  windowHeight: 640,
 }
 
 const VALID_THEME_MODES = new Set(['system', 'dark', 'light'])
@@ -10,6 +11,7 @@ const VALID_THEME_MODES = new Set(['system', 'dark', 'light'])
 function normalizeUiSettings(raw) {
   const data = raw && typeof raw === 'object' ? raw : {}
   const themeMode = VALID_THEME_MODES.has(data.themeMode) ? data.themeMode : DEFAULT_UI_SETTINGS.themeMode
+  const windowHeight = Math.floor(Number(data.windowHeight))
 
   return {
     showRecentOpened:
@@ -21,6 +23,10 @@ function normalizeUiSettings(raw) {
         ? data.showOpenCount
         : DEFAULT_UI_SETTINGS.showOpenCount,
     themeMode,
+    windowHeight:
+      Number.isFinite(windowHeight) && windowHeight > 0
+        ? windowHeight
+        : DEFAULT_UI_SETTINGS.windowHeight,
   }
 }
 

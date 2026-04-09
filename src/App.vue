@@ -48,6 +48,7 @@ const uiSettings = ref<BookmarkUiSettings>({
   showRecentOpened: true,
   showOpenCount: true,
   themeMode: 'system',
+  windowHeight: 640,
 })
 const prefersDark = ref(false)
 const pinnedMap = ref<PinnedBookmarkMap>({})
@@ -139,6 +140,15 @@ function applyBookmarkLoadResult(result: BookmarkLoadResult) {
 // 先验证路径是否真的可读，再决定要不要把结果写进当前状态或持久化配置。
 function validateChromeBookmarks(nextPath: string) {
   return window.services.loadChromeBookmarks(nextPath) as BookmarkLoadResult
+}
+
+// 主插件窗口目前只开放高度设置，所以在每次读取或更新设置后同步一次。
+function applyPluginWindowHeight(windowHeight: number) {
+  if (!window.utools?.setExpendHeight) {
+    return
+  }
+
+  window.utools.setExpendHeight(windowHeight)
 }
 
 // 顶部输入框只在首页工作，进入设置页后需要还原成普通状态。
@@ -233,6 +243,7 @@ function initializeApp() {
   uiSettings.value = window.services.getBookmarkUiSettings() as BookmarkUiSettings
   pinnedMap.value = window.services.getPinnedBookmarks() as PinnedBookmarkMap
   recentOpenedMap.value = window.services.getRecentOpenedBookmarks() as RecentOpenedMap
+  applyPluginWindowHeight(uiSettings.value.windowHeight)
   bookmarkPath.value = settings.chromeBookmarksPath
   loadBookmarks(settings.chromeBookmarksPath, 'home')
   bootstrapped.value = true
@@ -285,6 +296,7 @@ function reloadFromSettings(nextPath: string) {
 // 设置页的展示开关即时持久化，首页读取的是同一份本地状态。
 function changeUiSettings(patch: BookmarkUiSettingsPatch) {
   uiSettings.value = window.services.saveBookmarkUiSettings(patch) as BookmarkUiSettings
+  applyPluginWindowHeight(uiSettings.value.windowHeight)
 }
 
 // 视图切换后把滚动位置归顶，避免设置页从中间位置开始显示。
@@ -502,6 +514,7 @@ onBeforeUnmount(() => {
     :show-recent-opened="uiSettings.showRecentOpened"
     :show-open-count="uiSettings.showOpenCount"
     :theme-mode="themeMode"
+    :window-height="uiSettings.windowHeight"
     :saving="saving"
     :error="settingsError"
     @back="backToHome"

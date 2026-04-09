@@ -660,6 +660,13 @@ a {
   color: var(--text-disabled);
 }
 
+.field-hint {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .actions-row {
   display: flex;
   flex-wrap: wrap;
