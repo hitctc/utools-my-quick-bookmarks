@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import HomeView from './bookmarks/HomeView.vue'
 import SettingsView from './bookmarks/SettingsView.vue'
+import { sortItemsPinnedFirst } from './bookmarks/itemOrder.js'
 import { getKeyboardNavigationResult } from './bookmarks/keyboardNavigation.js'
 import {
   getBookmarkSearchMeta,
@@ -246,7 +247,7 @@ function syncSubInput() {
       searchQuery.value = String(text || '')
       highlightedIndex.value = 0
     },
-    '搜索书签标题、网址或目录，标题支持全拼和拼音首字母',
+    '搜索书签标题、域名或目录，标题支持全拼和拼音首字母',
     true,
   )
 
@@ -559,7 +560,10 @@ const searchableItems = computed(() => {
     return mergedItems.value
   }
 
-  return mergedItems.value.filter(item => getBookmarkSearchMeta(item, searchTokens.value).matches)
+  return sortItemsPinnedFirst(
+    mergedItems.value.filter(item => getBookmarkSearchMeta(item, searchTokens.value).matches),
+    pinnedMap.value,
+  )
 })
 
 const pinnedItems = computed(() =>

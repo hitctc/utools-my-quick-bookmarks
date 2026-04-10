@@ -5,16 +5,39 @@ const props = defineProps<{
   title: string
   siteLabel: string
   pathLabel: string
+  primaryMatchLabel: string
   displayNumber: number
   openCount: number
   showOpenCount: boolean
   keyboardActive: boolean
-  urlOnlyMatch: boolean
   titleSegments: Array<{ text: string; matched: boolean }>
   siteSegments: Array<{ text: string; matched: boolean }>
   pathSegments: Array<{ text: string; matched: boolean }>
 }>()
 const openCountLabel = computed(() => `打开 ${props.openCount} 次`)
+const primaryMatchVariant = computed(() => {
+  if (props.primaryMatchLabel === '标题') {
+    return 'title'
+  }
+
+  if (props.primaryMatchLabel === '全拼') {
+    return 'full-pinyin'
+  }
+
+  if (props.primaryMatchLabel === '简拼') {
+    return 'initials'
+  }
+
+  if (props.primaryMatchLabel === '域名') {
+    return 'domain'
+  }
+
+  if (props.primaryMatchLabel === '路径') {
+    return 'path'
+  }
+
+  return 'default'
+})
 
 // 片段数据可能来自空字符串，这里统一兜底，保证模板渲染结构稳定。
 function getStableSegments(segments: Array<{ text: string; matched: boolean }>, fallbackText: string) {
@@ -62,7 +85,14 @@ const stablePathSegments = computed(() => getStableSegments(props.pathSegments, 
         </span>
       </span>
       <div class="bookmark-cover__footer-stats">
-        <span v-if="urlOnlyMatch" class="bookmark-cover__chip">网址命中</span>
+        <span
+          v-if="primaryMatchLabel"
+          class="bookmark-cover__chip"
+          :class="`bookmark-cover__chip--${primaryMatchVariant}`"
+        >
+          <span class="bookmark-cover__chip-marker" aria-hidden="true" />
+          <span class="bookmark-cover__chip-text">{{ primaryMatchLabel }}</span>
+        </span>
         <span v-if="showOpenCount && openCount > 0" class="bookmark-cover__count">{{ openCountLabel }}</span>
       </div>
     </div>

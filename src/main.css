@@ -628,18 +628,128 @@ a {
 .bookmark-cover__chip {
   display: inline-flex;
   align-items: center;
+  gap: 5px;
   min-height: 18px;
   max-width: 100%;
-  padding: 0 6px;
-  border: 1px solid var(--border);
+  padding: 0 7px 0 6px;
+  border: 1px solid color-mix(in srgb, var(--text-primary) 14%, var(--border-visible));
   border-radius: 999px;
-  background: var(--surface-raised);
-  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--surface-raised) 90%, var(--accent-soft) 10%);
+  color: color-mix(in srgb, var(--text-primary) 82%, var(--text-secondary));
   font-family: "Space Mono", monospace;
   font-size: 8px;
   font-weight: 700;
   letter-spacing: 0.01em;
   white-space: nowrap;
+}
+
+.bookmark-cover__chip-marker {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  color: currentColor;
+}
+
+.bookmark-cover__chip-text {
+  display: inline-block;
+  transform: translateY(0.02em);
+}
+
+.bookmark-cover__chip--title {
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--border-visible));
+  background: color-mix(in srgb, var(--surface-raised) 82%, var(--accent-soft) 18%);
+  color: color-mix(in srgb, var(--accent) 54%, var(--text-primary));
+}
+
+.bookmark-cover__chip--title .bookmark-cover__chip-marker {
+  width: 3px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.bookmark-cover__chip--full-pinyin {
+  border-color: color-mix(in srgb, var(--accent) 16%, var(--border-visible));
+  background: color-mix(in srgb, var(--surface-raised) 92%, var(--accent-soft) 8%);
+}
+
+.bookmark-cover__chip--full-pinyin .bookmark-cover__chip-marker::before,
+.bookmark-cover__chip--full-pinyin .bookmark-cover__chip-marker::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.bookmark-cover__chip--full-pinyin .bookmark-cover__chip-marker::before {
+  top: 2px;
+}
+
+.bookmark-cover__chip--full-pinyin .bookmark-cover__chip-marker::after {
+  bottom: 2px;
+  width: 70%;
+  right: auto;
+}
+
+.bookmark-cover__chip--initials {
+  border-color: color-mix(in srgb, var(--accent) 18%, var(--border-visible));
+  background: color-mix(in srgb, var(--surface-raised) 88%, var(--accent-soft) 12%);
+}
+
+.bookmark-cover__chip--initials .bookmark-cover__chip-marker {
+  background:
+    linear-gradient(currentColor, currentColor) left center / 2px 8px no-repeat,
+    linear-gradient(currentColor, currentColor) center center / 2px 6px no-repeat,
+    linear-gradient(currentColor, currentColor) right center / 2px 4px no-repeat;
+}
+
+.bookmark-cover__chip--domain {
+  background: color-mix(in srgb, var(--surface-raised) 96%, var(--border-visible) 4%);
+  color: color-mix(in srgb, var(--text-primary) 68%, var(--text-secondary));
+}
+
+.bookmark-cover__chip--domain .bookmark-cover__chip-marker {
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid currentColor;
+  border-radius: 999px;
+}
+
+.bookmark-cover__chip--path {
+  background: color-mix(in srgb, var(--surface-raised) 94%, var(--border-visible) 6%);
+  color: color-mix(in srgb, var(--text-primary) 74%, var(--text-secondary));
+}
+
+.bookmark-cover__chip--path .bookmark-cover__chip-marker::before,
+.bookmark-cover__chip--path .bookmark-cover__chip-marker::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.bookmark-cover__chip--path .bookmark-cover__chip-marker::before {
+  left: 1px;
+  top: 4px;
+  width: 8px;
+  height: 2px;
+}
+
+.bookmark-cover__chip--path .bookmark-cover__chip-marker::after {
+  right: 1px;
+  top: 1px;
+  width: 2px;
+  height: 8px;
+}
+
+.bookmark-cover--keyboard-active .bookmark-cover__chip {
+  box-shadow: 0 0 0 1px color-mix(in srgb, currentColor 9%, transparent);
 }
 
 .bookmark-cover__count {

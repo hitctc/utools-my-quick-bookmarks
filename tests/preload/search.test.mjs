@@ -39,7 +39,7 @@ test('buildHighlightedSegments returns case-insensitive matched segments', () =>
   ])
 })
 
-test('getBookmarkSearchMeta uses AND semantics across title, url, folder path, and domain', () => {
+test('getBookmarkSearchMeta uses AND semantics across title, domain, and folder path', () => {
   const item = {
     title: 'Alpha Roadmap',
     url: 'https://docs.example.com/team/guide',
@@ -47,7 +47,7 @@ test('getBookmarkSearchMeta uses AND semantics across title, url, folder path, a
     sourceRoot: 'bookmark_bar',
   }
 
-  const meta = getBookmarkSearchMeta(item, normalizeSearchTokens('alpha guide example planning'))
+  const meta = getBookmarkSearchMeta(item, normalizeSearchTokens('alpha docs planning'))
 
   assert.equal(meta.matches, true)
   assert.equal(meta.urlOnlyMatch, false)
@@ -61,7 +61,7 @@ test('getBookmarkSearchMeta uses AND semantics across title, url, folder path, a
   ])
 })
 
-test('getBookmarkSearchMeta marks urlOnlyMatch when only the hidden url part matches', () => {
+test('getBookmarkSearchMeta does not match when only hidden url path text matches', () => {
   const item = {
     title: 'Unrelated title',
     url: 'https://docs.example.com/team/guide?tab=security',
@@ -71,11 +71,12 @@ test('getBookmarkSearchMeta marks urlOnlyMatch when only the hidden url part mat
 
   const meta = getBookmarkSearchMeta(item, normalizeSearchTokens('security'))
 
-  assert.equal(meta.matches, true)
-  assert.equal(meta.urlOnlyMatch, true)
+  assert.equal(meta.matches, false)
+  assert.equal(meta.urlOnlyMatch, false)
+  assert.equal(meta.primaryMatchLabel, '')
 })
 
-test('getBookmarkSearchMeta keeps urlOnlyMatch false when only the domain matches', () => {
+test('getBookmarkSearchMeta matches when only the domain matches', () => {
   const item = {
     title: 'Unrelated title',
     url: 'https://docs.example.com/team/guide',
@@ -87,9 +88,10 @@ test('getBookmarkSearchMeta keeps urlOnlyMatch false when only the domain matche
 
   assert.equal(meta.matches, true)
   assert.equal(meta.urlOnlyMatch, false)
+  assert.equal(meta.primaryMatchLabel, '域名')
 })
 
-test('getBookmarkSearchMeta keeps urlOnlyMatch false when keywords split between visible fields and hidden url', () => {
+test('getBookmarkSearchMeta no longer accepts keywords split between visible fields and hidden url path', () => {
   const item = {
     title: 'Alpha Roadmap',
     url: 'https://docs.example.com/team/guide?tab=security',
@@ -99,7 +101,7 @@ test('getBookmarkSearchMeta keeps urlOnlyMatch false when keywords split between
 
   const meta = getBookmarkSearchMeta(item, normalizeSearchTokens('alpha planning security'))
 
-  assert.equal(meta.matches, true)
+  assert.equal(meta.matches, false)
   assert.equal(meta.urlOnlyMatch, false)
 })
 
@@ -132,7 +134,23 @@ test('getBookmarkSearchMeta matches a chinese title by full pinyin', () => {
 
   assert.equal(meta.matches, true)
   assert.equal(meta.urlOnlyMatch, false)
-  assert.deepEqual(meta.highlightedTitleSegments, [{ text: '网络安全', matched: false }])
+  assert.equal(meta.primaryMatchLabel, '全拼')
+  assert.equal(meta.primaryMatchToken, 'wangluoanquan')
+  assert.deepEqual(meta.highlightedTitleSegments, [{ text: '网络安全', matched: true }])
+})
+
+test('getBookmarkSearchMeta does not match a chinese title by cross-syllable full pinyin substring', () => {
+  const item = {
+    title: '新时代',
+    url: 'https://example.com/timeline',
+    folderPath: ['归档'],
+    sourceRoot: 'bookmark_bar',
+  }
+
+  const meta = getBookmarkSearchMeta(item, normalizeSearchTokens('ns'))
+
+  assert.equal(meta.matches, false)
+  assert.deepEqual(meta.highlightedTitleSegments, [{ text: '新时代', matched: false }])
 })
 
 test('getBookmarkSearchMeta matches a chinese title by pinyin initials', () => {
@@ -147,6 +165,26 @@ test('getBookmarkSearchMeta matches a chinese title by pinyin initials', () => {
 
   assert.equal(meta.matches, true)
   assert.equal(meta.urlOnlyMatch, false)
+  assert.equal(meta.primaryMatchLabel, '简拼')
+  assert.equal(meta.primaryMatchToken, 'wlaq')
+  assert.deepEqual(meta.highlightedTitleSegments, [{ text: '网络安全', matched: true }])
+})
+
+test('getBookmarkSearchMeta matches chinese title parts only when full pinyin starts at a syllable boundary', () => {
+  const item = {
+    title: '新时代',
+    url: 'https://example.com/timeline',
+    folderPath: ['归档'],
+    sourceRoot: 'bookmark_bar',
+  }
+
+  const meta = getBookmarkSearchMeta(item, normalizeSearchTokens('shidai'))
+
+  assert.equal(meta.matches, true)
+  assert.deepEqual(meta.highlightedTitleSegments, [
+    { text: '新', matched: false },
+    { text: '时代', matched: true },
+  ])
 })
 
 test('getBookmarkSearchMeta keeps AND semantics for mixed chinese and pinyin tokens', () => {
@@ -160,6 +198,11 @@ test('getBookmarkSearchMeta keeps AND semantics for mixed chinese and pinyin tok
   const meta = getBookmarkSearchMeta(item, normalizeSearchTokens('wangluo 清单'))
 
   assert.equal(meta.matches, true)
+  assert.deepEqual(meta.highlightedTitleSegments, [
+    { text: '网络', matched: true },
+    { text: '安全', matched: false },
+    { text: '清单', matched: true },
+  ])
 })
 
 test('getBookmarkSearchMeta does not expand pinyin matching to folder labels', () => {
@@ -173,6 +216,36 @@ test('getBookmarkSearchMeta does not expand pinyin matching to folder labels', (
   const meta = getBookmarkSearchMeta(item, normalizeSearchTokens('gongzuoxuexi'))
 
   assert.equal(meta.matches, false)
+  assert.equal(meta.primaryMatchLabel, '')
+  assert.equal(meta.primaryMatchToken, '')
+})
+
+test('getBookmarkSearchMeta prefers title label when token also matches other fields', () => {
+  const item = {
+    title: 'ns 文档入口',
+    url: 'https://ns.example.com/guide?tab=ns',
+    folderPath: ['ns 目录'],
+    sourceRoot: 'bookmark_bar',
+  }
+
+  const meta = getBookmarkSearchMeta(item, normalizeSearchTokens('ns'))
+
+  assert.equal(meta.matches, true)
+  assert.equal(meta.primaryMatchLabel, '标题')
+})
+
+test('getBookmarkSearchMeta reports path label when only bookmark path matches', () => {
+  const item = {
+    title: 'Alpha Guide',
+    url: 'https://example.com/guide',
+    folderPath: ['工作台', 'NS目录'],
+    sourceRoot: 'bookmark_bar',
+  }
+
+  const meta = getBookmarkSearchMeta(item, normalizeSearchTokens('ns目录'))
+
+  assert.equal(meta.matches, true)
+  assert.equal(meta.primaryMatchLabel, '路径')
 })
 
 test('getBookmarkSearchMeta keeps stable labels when visible fields are empty', () => {
