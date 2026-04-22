@@ -282,28 +282,30 @@ function collectVisibleCardRects() {
     return []
   }
 
-  return visibleEntries.value
-    .map((entry, index) => {
-      const selector = `[data-bookmark-card-key="${escapeCardKey(entry.cardKey)}"]`
-      const element = document.querySelector<HTMLElement>(selector)
-      if (!element) {
-        return null
-      }
+  const rects: BookmarkCardRect[] = []
 
-      const rect = element.getBoundingClientRect()
+  for (const [index, entry] of visibleEntries.value.entries()) {
+    const selector = `[data-bookmark-card-key="${escapeCardKey(entry.cardKey)}"]`
+    const element = document.querySelector<HTMLElement>(selector)
+    if (!element) {
+      return []
+    }
 
-      return {
-        cardKey: entry.cardKey,
-        index,
-        left: rect.left,
-        right: rect.right,
-        top: rect.top,
-        bottom: rect.bottom,
-        centerX: rect.left + rect.width / 2,
-        centerY: rect.top + rect.height / 2,
-      }
+    const rect = element.getBoundingClientRect()
+
+    rects.push({
+      cardKey: entry.cardKey,
+      index,
+      left: rect.left,
+      right: rect.right,
+      top: rect.top,
+      bottom: rect.bottom,
+      centerX: rect.left + rect.width / 2,
+      centerY: rect.top + rect.height / 2,
     })
-    .filter((rect): rect is BookmarkCardRect => Boolean(rect))
+  }
+
+  return rects
 }
 
 // 键盘导航始终对当前可见卡片生效，回车直接复用同一套打开逻辑。
