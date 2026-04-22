@@ -48,7 +48,6 @@ type SyncPersistedStateOptions = {
   skipBookmarkRefresh?: boolean
 }
 const DEFAULT_WINDOW_HEIGHT = 640
-const KEYBOARD_NAVIGATION_EVENT_OPTIONS = { capture: true }
 
 const currentView = ref<'home' | 'settings'>('home')
 const bookmarkPath = ref('')
@@ -327,7 +326,6 @@ function handleWindowKeydown(event: KeyboardEvent) {
 
   if (result.preventDefault) {
     event.preventDefault()
-    event.stopImmediatePropagation()
   }
 
   if (result.action === 'move') {
@@ -727,8 +725,7 @@ watch(visibleEntries, entries => {
 })
 
 onMounted(() => {
-  // uTools 顶部子输入框也会处理方向键，capture 阶段先拦截才能避免左右键先移动光标。
-  window.addEventListener('keydown', handleWindowKeydown, KEYBOARD_NAVIGATION_EVENT_OPTIONS)
+  window.addEventListener('keydown', handleWindowKeydown)
 
   if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
     systemThemeQuery.value = window.matchMedia(SYSTEM_THEME_QUERY)
@@ -765,7 +762,7 @@ onBeforeUnmount(() => {
     window.clearTimeout(scheduledRefreshTimer)
     scheduledRefreshTimer = null
   }
-  window.removeEventListener('keydown', handleWindowKeydown, KEYBOARD_NAVIGATION_EVENT_OPTIONS)
+  window.removeEventListener('keydown', handleWindowKeydown)
   if (systemThemeQuery.value) {
     detachSystemThemeListener(systemThemeQuery.value)
     systemThemeQuery.value = null
