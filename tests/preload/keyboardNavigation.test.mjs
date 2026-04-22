@@ -127,6 +127,20 @@ test('same row left/right move to nearest card', () => {
   )
 })
 
+test('ArrowLeft selects the nearest left card when multiple candidates exist in the same row', () => {
+  const rects = [
+    createRect(0, 40, 50, 20, 0),
+    createRect(1, 150, 50, 20, 120),
+    createRect(2, 220, 50, 20, 200),
+    createRect(3, 300, 145, 120, 280),
+  ]
+
+  assert.equal(
+    getSpatialNavigationIndex({ key: 'ArrowLeft', highlightedIndex: 2, rects }),
+    1,
+  )
+})
+
 test('same row ends fall back to adjacent list item', () => {
   const rects = [
     createRect(0, 50, 50, 20, 0),
@@ -215,5 +229,26 @@ test('invalid rect list keeps highlighted index', () => {
   assert.equal(
     getSpatialNavigationIndex({ key: 'ArrowDown', highlightedIndex: 0, rects: invalidNumber }),
     0,
+  )
+})
+
+test('non-integer highlighted index returns unchanged', () => {
+  const rects = [
+    createRect(0, 40, 50, 20, 0),
+    createRect(1, 140, 50, 20, 120),
+    createRect(2, 230, 145, 120, 220),
+  ]
+
+  assert.equal(
+    getSpatialNavigationIndex({ key: 'ArrowDown', highlightedIndex: 1.5, rects }),
+    1.5,
+  )
+  assert.equal(
+    getSpatialNavigationIndex({ key: 'ArrowLeft', highlightedIndex: -1.2, rects }),
+    -1.2,
+  )
+  assert.equal(
+    getSpatialNavigationIndex({ key: 'ArrowRight', highlightedIndex: 2.9, rects }),
+    2.9,
   )
 })

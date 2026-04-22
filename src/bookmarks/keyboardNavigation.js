@@ -80,20 +80,44 @@ function pickClosestByCenterX(currentCenterX, candidates) {
 
 function nearestHorizontalCandidate(current, rects, direction) {
   if (direction === 'right') {
-    const candidates = rects.filter((rect) => rect.index !== current.index && isSameRow(current.centerY, rect.centerY) && rect.centerX > current.centerX)
+    const candidates = rects.filter(
+      (rect) => rect.index !== current.index && isSameRow(current.centerY, rect.centerY) && rect.centerX > current.centerX,
+    )
     if (candidates.length === 0) {
       return null
     }
-    candidates.sort((a, b) => (a.centerX - current.centerX) - (b.centerX - current.centerX))
-    return candidates[0].index
+    let best = candidates[0]
+    let bestDistance = Number.POSITIVE_INFINITY
+
+    for (const candidate of candidates) {
+      const distance = candidate.centerX - current.centerX
+      if (distance < bestDistance) {
+        bestDistance = distance
+        best = candidate
+      }
+    }
+
+    return best.index
   }
 
-  const candidates = rects.filter((rect) => rect.index !== current.index && isSameRow(current.centerY, rect.centerY) && rect.centerX < current.centerX)
+  const candidates = rects.filter(
+    (rect) => rect.index !== current.index && isSameRow(current.centerY, rect.centerY) && rect.centerX < current.centerX,
+  )
   if (candidates.length === 0) {
     return null
   }
-  candidates.sort((a, b) => (current.centerX - b.centerX) - (current.centerX - a.centerX))
-  return candidates[0].index
+  let best = candidates[0]
+  let bestDistance = Number.POSITIVE_INFINITY
+
+  for (const candidate of candidates) {
+    const distance = current.centerX - candidate.centerX
+    if (distance < bestDistance) {
+      bestDistance = distance
+      best = candidate
+    }
+  }
+
+  return best.index
 }
 
 export function getKeyboardNavigationResult({
@@ -156,7 +180,7 @@ export function getSpatialNavigationIndex({
   highlightedIndex,
   rects,
 }) {
-  if (!Array.isArray(rects) || highlightedIndex < 0 || highlightedIndex >= rects.length) {
+  if (!Array.isArray(rects) || !Number.isInteger(highlightedIndex) || highlightedIndex < 0 || highlightedIndex >= rects.length) {
     return highlightedIndex
   }
 
