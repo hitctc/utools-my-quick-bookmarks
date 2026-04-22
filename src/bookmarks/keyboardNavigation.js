@@ -1,4 +1,101 @@
-// 统一收口首页键盘导航决策，避免焦点和高亮逻辑散落在组件事件里。
+const ROW_TOLERANCE_PX = 8
+
+function isFiniteNumber(value) {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
+function isValidRect(rect, index) {
+  return (
+    rect &&
+    rect.index === index &&
+    isFiniteNumber(rect.left) &&
+    isFiniteNumber(rect.right) &&
+    isFiniteNumber(rect.top) &&
+    isFiniteNumber(rect.bottom) &&
+    isFiniteNumber(rect.centerX) &&
+    isFiniteNumber(rect.centerY)
+  )
+}
+
+function isSameRow(currentCenterY, candidateCenterY) {
+  return Math.abs(currentCenterY - candidateCenterY) <= ROW_TOLERANCE_PX
+}
+
+function getNearestRowCenterYDown(currentCenterY, rects, currentIndex) {
+  let nearest = null
+
+  for (const rect of rects) {
+    if (rect.index === currentIndex) {
+      continue
+    }
+
+    const delta = rect.centerY - currentCenterY
+    if (delta <= ROW_TOLERANCE_PX) {
+      continue
+    }
+
+    if (nearest === null || delta < nearest) {
+      nearest = delta
+    }
+  }
+
+  return nearest === null ? null : currentCenterY + nearest
+}
+
+function getNearestRowCenterYUp(currentCenterY, rects, currentIndex) {
+  let nearest = null
+
+  for (const rect of rects) {
+    if (rect.index === currentIndex) {
+      continue
+    }
+
+    const delta = rect.centerY - currentCenterY
+    if (delta >= -ROW_TOLERANCE_PX) {
+      continue
+    }
+
+    if (nearest === null || delta > nearest) {
+      nearest = delta
+    }
+  }
+
+  return nearest === null ? null : currentCenterY + nearest
+}
+
+function pickClosestByCenterX(currentCenterX, candidates) {
+  let best = candidates[0]
+  let bestDistance = Number.POSITIVE_INFINITY
+
+  for (const candidate of candidates) {
+    const distance = Math.abs(candidate.centerX - currentCenterX)
+    if (distance < bestDistance) {
+      bestDistance = distance
+      best = candidate
+    }
+  }
+
+  return best.index
+}
+
+function nearestHorizontalCandidate(current, rects, direction) {
+  if (direction === 'right') {
+    const candidates = rects.filter((rect) => rect.index !== current.index && isSameRow(current.centerY, rect.centerY) && rect.centerX > current.centerX)
+    if (candidates.length === 0) {
+      return null
+    }
+    candidates.sort((a, b) => (a.centerX - current.centerX) - (b.centerX - current.centerX))
+    return candidates[0].index
+  }
+
+  const candidates = rects.filter((rect) => rect.index !== current.index && isSameRow(current.centerY, rect.centerY) && rect.centerX < current.centerX)
+  if (candidates.length === 0) {
+    return null
+  }
+  candidates.sort((a, b) => (current.centerX - b.centerX) - (current.centerX - a.centerX))
+  return candidates[0].index
+}
+
 export function getKeyboardNavigationResult({
   key,
   currentView,
@@ -19,19 +116,10 @@ export function getKeyboardNavigationResult({
     }
   }
 
-  if (key === 'ArrowDown') {
+  if (key === 'ArrowDown' || key === 'ArrowUp' || key === 'ArrowLeft' || key === 'ArrowRight') {
     return {
       action: 'move',
-      nextIndex: Math.min(highlightedIndex + 1, entryCount - 1),
-      preventDefault: true,
-      subInputBehavior: 'preserve',
-    }
-  }
-
-  if (key === 'ArrowUp') {
-    return {
-      action: 'move',
-      nextIndex: Math.max(highlightedIndex - 1, 0),
+      nextIndex: highlightedIndex,
       preventDefault: true,
       subInputBehavior: 'preserve',
     }
@@ -61,4 +149,66 @@ export function getKeyboardNavigationResult({
     preventDefault: false,
     subInputBehavior: 'none',
   }
+}
+
+export function getSpatialNavigationIndex({
+  key,
+  highlightedIndex,
+  rects,
+}) {
+  if (!Array.isArray(rects) || highlightedIndex < 0 || highlightedIndex >= rects.length) {
+    return highlightedIndex
+  }
+
+  if (!rects.every((rect, index) => isValidRect(rect, index))) {
+    return highlightedIndex
+  }
+
+  const current = rects[highlightedIndex]
+
+  if (key === 'ArrowRight') {
+    const sameRowCandidate = nearestHorizontalCandidate(current, rects, 'right')
+    if (sameRowCandidate !== null) {
+      return sameRowCandidate
+    }
+    return Math.min(highlightedIndex + 1, rects.length - 1)
+  }
+
+  if (key === 'ArrowLeft') {
+    const sameRowCandidate = nearestHorizontalCandidate(current, rects, 'left')
+    if (sameRowCandidate !== null) {
+      return sameRowCandidate
+    }
+    return Math.max(highlightedIndex - 1, 0)
+  }
+
+  if (key === 'ArrowDown') {
+    const targetRowCenterY = getNearestRowCenterYDown(current.centerY, rects, highlightedIndex)
+    if (targetRowCenterY === null) {
+      return highlightedIndex
+    }
+
+    const sameRowCandidates = rects.filter((rect) => isSameRow(targetRowCenterY, rect.centerY))
+    if (sameRowCandidates.length === 0) {
+      return highlightedIndex
+    }
+
+    return pickClosestByCenterX(current.centerX, sameRowCandidates)
+  }
+
+  if (key === 'ArrowUp') {
+    const targetRowCenterY = getNearestRowCenterYUp(current.centerY, rects, highlightedIndex)
+    if (targetRowCenterY === null) {
+      return highlightedIndex
+    }
+
+    const sameRowCandidates = rects.filter((rect) => isSameRow(targetRowCenterY, rect.centerY))
+    if (sameRowCandidates.length === 0) {
+      return highlightedIndex
+    }
+
+    return pickClosestByCenterX(current.centerX, sameRowCandidates)
+  }
+
+  return highlightedIndex
 }
