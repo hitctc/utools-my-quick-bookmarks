@@ -71,6 +71,7 @@ const prefersDark = ref(false)
 const pinnedMap = ref<PinnedBookmarkMap>({})
 const recentOpenedMap = ref<RecentOpenedMap>({})
 const systemThemeQuery = ref<MediaQueryList | null>(null)
+const homeViewRef = ref<{ focusSearchInput: () => void } | null>(null)
 let scheduledRefreshTimer: ReturnType<typeof globalThis.setTimeout> | null = null
 type BookmarkCardRect = {
   cardKey: string
@@ -244,29 +245,34 @@ function applyPluginWindowHeight(windowHeight: number) {
   window.utools.setExpendHeight(windowHeight)
 }
 
-// 顶部输入框只在首页工作，进入设置页后需要还原成普通状态。
-function syncSubInput() {
-  if (!window.utools?.setSubInput || !window.utools?.removeSubInput) {
+// 释放 uTools 顶部子输入框后，首页搜索完全交给插件内部输入框控制。
+function releaseUtoolsSubInputFocus() {
+  if (!window.utools) {
     return
   }
 
+  window.utools.subInputBlur?.()
+  window.utools.removeSubInput?.()
+}
+
+// 进入首页或从设置页返回时，把焦点拉到内部搜索框，保证用户可以直接输入。
+async function focusHomeSearchInput() {
   if (currentView.value !== 'home' || !bootstrapped.value) {
-    window.utools.removeSubInput()
     return
   }
 
-  window.utools.setSubInput(
-    ({ text }) => {
-      searchQuery.value = String(text || '')
-      highlightedIndex.value = 0
-    },
-    '搜索书签标题、域名或目录，标题支持全拼和拼音首字母',
-    true,
-  )
+  await nextTick()
+  homeViewRef.value?.focusSearchInput()
+}
 
-  if (window.utools.setSubInputValue) {
-    window.utools.setSubInputValue(searchQuery.value)
-  }
+function syncHomeSearchFocus() {
+  releaseUtoolsSubInputFocus()
+  void focusHomeSearchInput()
+}
+
+function handleSearchQueryChange(nextQuery: string) {
+  searchQuery.value = String(nextQuery || '')
+  highlightedIndex.value = 0
 }
 
 function escapeCardKey(cardKey: string) {
@@ -341,8 +347,8 @@ function handleWindowKeydown(event: KeyboardEvent) {
     }
   }
 
-  if (result.subInputBehavior === 'focus') {
-    window.utools?.subInputFocus?.()
+  if (result.searchInputBehavior === 'focus') {
+    void focusHomeSearchInput()
   }
 }
 
@@ -488,7 +494,7 @@ function initializeApp() {
     refreshBookmarks({ nextPath: bookmarkPath.value, targetView: 'home', blocking: true })
   }
 
-  syncSubInput()
+  syncHomeSearchFocus()
 }
 
 // 保存路径后立即重新解析；只有重新解析成功时才返回首页。
@@ -504,7 +510,7 @@ function saveSettings(nextPath: string) {
     refreshState.value = 'idle'
     bookmarkPath.value = settings.chromeBookmarksPath
     currentView.value = 'home'
-    syncSubInput()
+    syncHomeSearchFocus()
   } catch (error) {
     settingsError.value = error instanceof Error ? error.message : '读取书签文件失败'
   } finally {
@@ -712,7 +718,7 @@ watch(
 )
 
 watch(currentView, () => {
-  syncSubInput()
+  syncHomeSearchFocus()
 })
 
 watch(visibleEntries, entries => {
@@ -767,13 +773,14 @@ onBeforeUnmount(() => {
     detachSystemThemeListener(systemThemeQuery.value)
     systemThemeQuery.value = null
   }
-  window.utools?.removeSubInput?.()
+  releaseUtoolsSubInputFocus()
 })
 </script>
 
 <template>
   <HomeView
     v-if="currentView === 'home'"
+    ref="homeViewRef"
     :bootstrapped="bootstrapped"
     :loading="loading"
     :error="homeError"
@@ -788,6 +795,7 @@ onBeforeUnmount(() => {
     :theme-status="themeStatus"
     :total="total"
     @refresh-bookmarks="refreshHomeBookmarks"
+    @update-search-query="handleSearchQueryChange"
     @open-bookmark="handleOpenBookmark"
     @toggle-pin="handleTogglePin"
     @open-settings="openSettingsView"

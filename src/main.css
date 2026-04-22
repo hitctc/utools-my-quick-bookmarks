@@ -91,6 +91,92 @@ a {
   gap: 10px;
 }
 
+.home-search {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.28fr) minmax(0, 1fr);
+  gap: 8px;
+  align-items: stretch;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--text-primary) 18%, var(--border-visible));
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--surface-raised) 88%, transparent), var(--surface));
+}
+
+.home-search__meta {
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  min-width: 0;
+  padding: 0 6px;
+}
+
+.home-search__hint {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.home-search__control {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.home-search__input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 76px 0 14px;
+  border: 1px solid var(--border-visible);
+  border-radius: 12px;
+  outline: none;
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  caret-color: var(--accent);
+}
+
+.home-search__input::placeholder {
+  color: var(--text-disabled);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.home-search__input:focus {
+  border-color: color-mix(in srgb, var(--accent) 58%, var(--border-visible));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.home-search__input:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+}
+
+.home-search__clear {
+  position: absolute;
+  right: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0 11px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-raised) 92%, var(--surface));
+  color: var(--text-secondary);
+  font-family: "Space Mono", monospace;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.home-search__clear:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
 .page-shell--settings {
   position: relative;
   display: grid;
@@ -1130,6 +1216,14 @@ a {
 
   .page-shell--home {
     padding-bottom: 88px;
+  }
+
+  .home-search {
+    grid-template-columns: 1fr;
+  }
+
+  .home-search__meta {
+    padding-inline: 2px;
   }
 
   .page-shell--settings {

@@ -65,9 +65,11 @@ const emit = defineEmits<{
   (event: 'refresh-bookmarks'): void
   (event: 'open-bookmark', item: BookmarkCardItem): void
   (event: 'toggle-pin', item: BookmarkCardItem): void
+  (event: 'update-search-query', value: string): void
 }>()
 
 const homeContentRef = ref<HTMLElement | null>(null)
+const searchInputRef = ref<HTMLInputElement | null>(null)
 
 // 搜索词在首页本地归一化，避免为了高亮能力再改动上层状态流。
 const searchTokens = computed(() => normalizeSearchTokens(props.searchQuery))
@@ -87,6 +89,22 @@ const sectionStartNumbers = computed(() => {
     return accumulator
   }, {})
 })
+
+// 搜索输入迁移到插件内部后，父级只需要调这个方法就能把焦点拉回输入框。
+async function focusSearchInput() {
+  await nextTick()
+  searchInputRef.value?.focus({ preventScroll: true })
+}
+
+// 只向上层同步原始输入内容，分词、过滤和高亮仍由原有搜索状态统一处理。
+function handleSearchInput(event: Event) {
+  emit('update-search-query', (event.target as HTMLInputElement).value)
+}
+
+function clearSearchInput() {
+  emit('update-search-query', '')
+  void focusSearchInput()
+}
 
 // 键盘高亮项变化后，把对应卡片滚动到当前可视区域内。
 async function scrollHighlightedCardIntoView(cardKey: string) {
@@ -116,10 +134,45 @@ watch(
 onMounted(() => {
   void scrollHighlightedCardIntoView(props.highlightedCardKey)
 })
+
+defineExpose({
+  focusSearchInput,
+})
 </script>
 
 <template>
   <section class="page-shell page-shell--home">
+    <section v-if="bootstrapped" class="home-search" aria-label="书签搜索">
+      <div class="home-search__meta">
+        <span class="mono-label">Search</span>
+        <span class="home-search__hint">标题 / 域名 / 目录，支持拼音</span>
+      </div>
+      <div class="home-search__control">
+        <input
+          ref="searchInputRef"
+          class="home-search__input"
+          type="text"
+          autocomplete="off"
+          spellcheck="false"
+          :disabled="loading"
+          :value="props.searchQuery"
+          aria-label="搜索书签"
+          placeholder="输入关键词，方向键选择卡片"
+          @input="handleSearchInput"
+        >
+        <button
+          v-if="props.searchQuery"
+          type="button"
+          class="home-search__clear"
+          aria-label="清空搜索"
+          title="清空搜索"
+          @click="clearSearchInput"
+        >
+          清空
+        </button>
+      </div>
+    </section>
+
     <section v-if="!bootstrapped" class="state-card" ref="homeContentRef">
       <p>请通过 uTools 接入开发模式进入插件。</p>
     </section>
@@ -168,7 +221,7 @@ onMounted(() => {
           <span v-if="props.refreshing" class="status-chip status-chip--muted">刷新中</span>
           <span v-else-if="props.refreshFailed" class="status-chip status-chip--danger">刷新失败</span>
           <span v-if="isSearchMode" class="status-chip status-chip--muted">搜索中</span>
-          <span class="status-chip status-chip--muted">上下键选</span>
+          <span class="status-chip status-chip--muted">方向键选</span>
         </div>
       </section>
 

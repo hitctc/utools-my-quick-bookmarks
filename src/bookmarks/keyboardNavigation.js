@@ -146,7 +146,7 @@ export function getKeyboardNavigationResult({
       action: 'noop',
       nextIndex: highlightedIndex,
       preventDefault: false,
-      subInputBehavior: 'none',
+      searchInputBehavior: 'none',
     }
   }
 
@@ -155,7 +155,7 @@ export function getKeyboardNavigationResult({
       action: 'move',
       nextIndex: highlightedIndex,
       preventDefault: true,
-      subInputBehavior: 'preserve',
+      searchInputBehavior: 'preserve',
     }
   }
 
@@ -164,7 +164,7 @@ export function getKeyboardNavigationResult({
       action: 'open-current',
       nextIndex: highlightedIndex,
       preventDefault: true,
-      subInputBehavior: 'none',
+      searchInputBehavior: 'none',
     }
   }
 
@@ -173,7 +173,7 @@ export function getKeyboardNavigationResult({
       action: 'focus-search',
       nextIndex: highlightedIndex,
       preventDefault: false,
-      subInputBehavior: 'focus',
+      searchInputBehavior: 'focus',
     }
   }
 
@@ -181,7 +181,7 @@ export function getKeyboardNavigationResult({
     action: 'noop',
     nextIndex: highlightedIndex,
     preventDefault: false,
-    subInputBehavior: 'none',
+    searchInputBehavior: 'none',
   }
 }
 

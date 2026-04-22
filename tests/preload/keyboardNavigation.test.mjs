@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 
 import { getKeyboardNavigationResult, getSpatialNavigationIndex } from '../../src/bookmarks/keyboardNavigation.js'
 
-test('all arrow keys are captured for card navigation and prevent sub input cursor movement', () => {
+test('all arrow keys are captured for card navigation and prevent internal search input cursor movement', () => {
   for (const key of ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']) {
     const result = getKeyboardNavigationResult({
       key,
@@ -21,7 +21,7 @@ test('all arrow keys are captured for card navigation and prevent sub input curs
     assert.equal(result.action, 'move')
     assert.equal(result.nextIndex, 2)
     assert.equal(result.preventDefault, true)
-    assert.equal(result.subInputBehavior, 'preserve')
+    assert.equal(result.searchInputBehavior, 'preserve')
   }
 })
 
@@ -55,7 +55,7 @@ test('arrow keys do not intercept when the shortcut should stay with the system 
       action: 'noop',
       nextIndex: input.highlightedIndex,
       preventDefault: false,
-      subInputBehavior: 'none',
+      searchInputBehavior: 'none',
     })
   }
 })
@@ -78,7 +78,7 @@ test('Enter opens current entry and Escape focuses search input', () => {
     action: 'open-current',
     nextIndex: 2,
     preventDefault: true,
-    subInputBehavior: 'none',
+    searchInputBehavior: 'none',
   })
 
   const focusResult = getKeyboardNavigationResult({
@@ -98,7 +98,7 @@ test('Enter opens current entry and Escape focuses search input', () => {
     action: 'focus-search',
     nextIndex: 2,
     preventDefault: false,
-    subInputBehavior: 'focus',
+    searchInputBehavior: 'focus',
   })
 })
 
