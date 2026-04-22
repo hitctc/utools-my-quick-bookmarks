@@ -321,6 +321,7 @@ function handleWindowKeydown(event: KeyboardEvent) {
     metaKey: event.metaKey,
     ctrlKey: event.ctrlKey,
     altKey: event.altKey,
+    shiftKey: event.shiftKey,
   })
 
   if (result.preventDefault) {

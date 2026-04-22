@@ -15,6 +15,7 @@ test('all arrow keys are captured for card navigation and prevent sub input curs
       metaKey: false,
       ctrlKey: false,
       altKey: false,
+      shiftKey: false,
     })
 
     assert.equal(result.action, 'move')
@@ -35,6 +36,7 @@ test('arrow keys do not intercept when the shortcut should stay with the system 
     metaKey: false,
     ctrlKey: false,
     altKey: false,
+    shiftKey: false,
   }
 
   const cases = [
@@ -45,6 +47,7 @@ test('arrow keys do not intercept when the shortcut should stay with the system 
     { ...base, metaKey: true },
     { ...base, ctrlKey: true },
     { ...base, altKey: true },
+    { ...base, shiftKey: true },
   ]
 
   for (const input of cases) {
@@ -68,6 +71,7 @@ test('Enter opens current entry and Escape focuses search input', () => {
     metaKey: false,
     ctrlKey: false,
     altKey: false,
+    shiftKey: false,
   })
 
   assert.deepEqual(openResult, {
@@ -87,6 +91,7 @@ test('Enter opens current entry and Escape focuses search input', () => {
     metaKey: false,
     ctrlKey: false,
     altKey: false,
+    shiftKey: false,
   })
 
   assert.deepEqual(focusResult, {

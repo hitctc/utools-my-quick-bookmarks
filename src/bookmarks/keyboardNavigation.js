@@ -130,8 +130,18 @@ export function getKeyboardNavigationResult({
   metaKey,
   ctrlKey,
   altKey,
+  shiftKey,
 }) {
-  if (currentView !== 'home' || loading || hasError || metaKey || ctrlKey || altKey || entryCount <= 0) {
+  if (
+    currentView !== 'home'
+    || loading
+    || hasError
+    || metaKey
+    || ctrlKey
+    || altKey
+    || shiftKey
+    || entryCount <= 0
+  ) {
     return {
       action: 'noop',
       nextIndex: highlightedIndex,
