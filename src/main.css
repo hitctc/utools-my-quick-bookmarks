@@ -93,12 +93,12 @@ a {
 
 .home-search {
   display: grid;
-  grid-template-columns: minmax(120px, 0.28fr) minmax(0, 1fr);
-  gap: 8px;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 10px;
   align-items: stretch;
-  padding: 8px;
+  padding: 5px 6px;
   border: 1px solid color-mix(in srgb, var(--text-primary) 18%, var(--border-visible));
-  border-radius: 14px;
+  border-radius: 12px;
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--surface-raised) 88%, transparent), var(--surface));
 }
@@ -106,15 +106,16 @@ a {
 .home-search__meta {
   display: grid;
   align-content: center;
-  gap: 3px;
-  min-width: 0;
-  padding: 0 6px;
+  gap: 2px;
+  min-width: max-content;
+  padding: 0 8px 0 6px;
 }
 
 .home-search__hint {
   color: var(--text-secondary);
   font-size: 12px;
-  line-height: 1.35;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .home-search__control {
@@ -126,10 +127,10 @@ a {
 
 .home-search__input {
   width: 100%;
-  min-height: 46px;
-  padding: 0 76px 0 14px;
+  min-height: 36px;
+  padding: 0 72px 0 14px;
   border: 1px solid var(--border-visible);
-  border-radius: 12px;
+  border-radius: 11px;
   outline: none;
   background: var(--surface-raised);
   color: var(--text-primary);
@@ -161,7 +162,7 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 32px;
+  min-height: 26px;
   padding: 0 11px;
   border: 1px solid var(--border);
   border-radius: 999px;
