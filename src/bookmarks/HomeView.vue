@@ -145,6 +145,7 @@ onMounted(() => {
             :key="entry.cardKey"
             class="bookmark-grid__item"
             :data-card-key="entry.cardKey"
+            :data-bookmark-card-key="entry.cardKey"
           >
             <BookmarkCard
               :item="entry.item"

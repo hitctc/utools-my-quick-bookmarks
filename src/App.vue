@@ -3,7 +3,10 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import HomeView from './bookmarks/HomeView.vue'
 import SettingsView from './bookmarks/SettingsView.vue'
 import { sortItemsPinnedFirst } from './bookmarks/itemOrder.js'
-import { getKeyboardNavigationResult } from './bookmarks/keyboardNavigation.js'
+import {
+  getKeyboardNavigationResult,
+  getSpatialNavigationIndex,
+} from './bookmarks/keyboardNavigation.js'
 import {
   getBookmarkSearchMeta,
   normalizeSearchTokens,
@@ -69,6 +72,16 @@ const pinnedMap = ref<PinnedBookmarkMap>({})
 const recentOpenedMap = ref<RecentOpenedMap>({})
 const systemThemeQuery = ref<MediaQueryList | null>(null)
 let scheduledRefreshTimer: ReturnType<typeof globalThis.setTimeout> | null = null
+type BookmarkCardRect = {
+  cardKey: string
+  index: number
+  left: number
+  right: number
+  top: number
+  bottom: number
+  centerX: number
+  centerY: number
+}
 
 // 统一把底层解析结果整理成首页卡片模型，避免展示层重复拼字段。
 function normalizeBookmarkItem(item: BookmarkItem): BookmarkItem {
@@ -256,6 +269,43 @@ function syncSubInput() {
   }
 }
 
+function escapeCardKey(cardKey: string) {
+  if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') {
+    return CSS.escape(cardKey)
+  }
+
+  return cardKey.replace(/"/g, '\\"')
+}
+
+function collectVisibleCardRects() {
+  if (typeof document === 'undefined') {
+    return []
+  }
+
+  return visibleEntries.value
+    .map((entry, index) => {
+      const selector = `[data-bookmark-card-key="${escapeCardKey(entry.cardKey)}"]`
+      const element = document.querySelector<HTMLElement>(selector)
+      if (!element) {
+        return null
+      }
+
+      const rect = element.getBoundingClientRect()
+
+      return {
+        cardKey: entry.cardKey,
+        index,
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+        bottom: rect.bottom,
+        centerX: rect.left + rect.width / 2,
+        centerY: rect.top + rect.height / 2,
+      }
+    })
+    .filter((rect): rect is BookmarkCardRect => Boolean(rect))
+}
+
 // 键盘导航始终对当前可见卡片生效，回车直接复用同一套打开逻辑。
 function handleWindowKeydown(event: KeyboardEvent) {
   const entries = visibleEntries.value
@@ -276,7 +326,11 @@ function handleWindowKeydown(event: KeyboardEvent) {
   }
 
   if (result.action === 'move') {
-    highlightedIndex.value = result.nextIndex
+    highlightedIndex.value = getSpatialNavigationIndex({
+      key: event.key,
+      highlightedIndex: highlightedIndex.value,
+      rects: collectVisibleCardRects(),
+    })
   } else if (result.action === 'open-current') {
     const current = entries[highlightedIndex.value]
     if (current) {

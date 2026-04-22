@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 
 import { getKeyboardNavigationResult, getSpatialNavigationIndex } from '../../src/bookmarks/keyboardNavigation.js'
 
-test('all arrow keys move the highlight and prevent sub input cursor movement', () => {
+test('all arrow keys are captured for card navigation and prevent sub input cursor movement', () => {
   for (const key of ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']) {
     const result = getKeyboardNavigationResult({
       key,
