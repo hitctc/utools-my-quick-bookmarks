@@ -280,10 +280,6 @@ function syncHomeSearchFocus() {
 function handleSearchQueryChange(nextQuery: string) {
   const normalizedQuery = String(nextQuery || '')
   searchQuery.value = normalizedQuery
-  uiSettings.value = {
-    ...uiSettings.value,
-    lastSearchQuery: normalizedQuery,
-  }
   scheduleSearchQuerySave(normalizedQuery)
   scheduleSearchApply(normalizedQuery)
 }
@@ -292,11 +288,6 @@ function handleSearchQueryChange(nextQuery: string) {
 function scheduleSearchApply(nextQuery: string) {
   if (scheduledSearchApplyTimer) {
     window.clearTimeout(scheduledSearchApplyTimer)
-  }
-
-  if (!String(nextQuery || '').trim()) {
-    applySearchQueryNow(nextQuery)
-    return
   }
 
   scheduledSearchApplyTimer = window.setTimeout(() => {
