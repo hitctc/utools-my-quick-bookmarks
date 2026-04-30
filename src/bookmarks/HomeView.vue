@@ -42,6 +42,10 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  activeSearchQuery: {
+    type: String,
+    default: '',
+  },
   emptyText: {
     type: String,
     default: '',
@@ -71,8 +75,8 @@ const emit = defineEmits<{
 const homeContentRef = ref<HTMLElement | null>(null)
 const searchInputRef = ref<HTMLInputElement | null>(null)
 
-// 搜索词在首页本地归一化，避免为了高亮能力再改动上层状态流。
-const searchTokens = computed(() => normalizeSearchTokens(props.searchQuery))
+// 卡片高亮跟随已经应用的搜索词，避免输入框每个按键都带动全量卡片重算。
+const searchTokens = computed(() => normalizeSearchTokens(props.activeSearchQuery))
 const sectionsSignature = computed(() =>
   (props.sections as BookmarkSection[])
     .map(section => `${section.key}:${section.entries.map(entry => entry.cardKey).join(',')}`)

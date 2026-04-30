@@ -50,6 +50,7 @@ type SyncPersistedStateOptions = {
 }
 const DEFAULT_WINDOW_HEIGHT = 640
 const SEARCH_QUERY_SAVE_DELAY_MS = 200
+const SEARCH_APPLY_DELAY_MS = 120
 
 const currentView = ref<'home' | 'settings'>('home')
 const bookmarkPath = ref('')
@@ -62,6 +63,7 @@ const homeError = ref('')
 const settingsError = ref('')
 const bootstrapped = ref(false)
 const searchQuery = ref('')
+const activeSearchQuery = ref('')
 const highlightedIndex = ref(0)
 const uiSettings = ref<BookmarkUiSettings>({
   showRecentOpened: true,
@@ -77,6 +79,7 @@ const systemThemeQuery = ref<MediaQueryList | null>(null)
 const homeViewRef = ref<{ focusSearchInput: () => void } | null>(null)
 let scheduledRefreshTimer: ReturnType<typeof globalThis.setTimeout> | null = null
 let scheduledSearchQuerySaveTimer: ReturnType<typeof globalThis.setTimeout> | null = null
+let scheduledSearchApplyTimer: ReturnType<typeof globalThis.setTimeout> | null = null
 type BookmarkCardRect = {
   cardKey: string
   index: number
@@ -281,8 +284,36 @@ function handleSearchQueryChange(nextQuery: string) {
     ...uiSettings.value,
     lastSearchQuery: normalizedQuery,
   }
-  highlightedIndex.value = 0
   scheduleSearchQuerySave(normalizedQuery)
+  scheduleSearchApply(normalizedQuery)
+}
+
+// 输入框先响应键盘输入，真正过滤和高亮延后一拍，避免每个按键都同步重算所有卡片。
+function scheduleSearchApply(nextQuery: string) {
+  if (scheduledSearchApplyTimer) {
+    window.clearTimeout(scheduledSearchApplyTimer)
+  }
+
+  if (!String(nextQuery || '').trim()) {
+    applySearchQueryNow(nextQuery)
+    return
+  }
+
+  scheduledSearchApplyTimer = window.setTimeout(() => {
+    scheduledSearchApplyTimer = null
+    applySearchQueryNow(nextQuery)
+  }, SEARCH_APPLY_DELAY_MS)
+}
+
+// 只有应用搜索词时才重置高亮和触发搜索结果重算，输入过程本身保持轻量。
+function applySearchQueryNow(nextQuery: string = searchQuery.value) {
+  if (scheduledSearchApplyTimer) {
+    window.clearTimeout(scheduledSearchApplyTimer)
+    scheduledSearchApplyTimer = null
+  }
+
+  activeSearchQuery.value = String(nextQuery || '')
+  highlightedIndex.value = 0
 }
 
 // 搜索词只属于首页 UI 状态，延迟写入可以减少输入时频繁打 dbStorage。
@@ -488,6 +519,7 @@ function syncPersistedState(
   applyPluginWindowHeight(nextUiSettings.windowHeight)
   bookmarkPath.value = nextBookmarkPath
   searchQuery.value = nextUiSettings.lastSearchQuery
+  activeSearchQuery.value = nextUiSettings.lastSearchQuery
 
   if (options.skipBookmarkRefresh) {
     return
@@ -646,7 +678,7 @@ const resolvedTheme = computed<BookmarkResolvedTheme>(() =>
   resolveThemeMode(themeMode.value, prefersDark.value),
 )
 const themeStatus = computed(() => formatThemeStatus(themeMode.value, resolvedTheme.value))
-const searchTokens = computed(() => normalizeSearchTokens(searchQuery.value))
+const searchTokens = computed(() => normalizeSearchTokens(activeSearchQuery.value))
 const isRefreshing = computed(() => refreshState.value === 'refreshing')
 const hasRefreshError = computed(() => refreshState.value === 'failed')
 
@@ -754,8 +786,8 @@ const highlightedCardKey = computed(() => {
 })
 
 const emptyText = computed(() => {
-  if (searchQuery.value.trim()) {
-    return `没有找到和“${searchQuery.value.trim()}”匹配的书签。`
+  if (activeSearchQuery.value.trim()) {
+    return `没有找到和“${activeSearchQuery.value.trim()}”匹配的书签。`
   }
 
   return '当前没有可展示的书签结果。'
@@ -824,6 +856,10 @@ onBeforeUnmount(() => {
     window.clearTimeout(scheduledRefreshTimer)
     scheduledRefreshTimer = null
   }
+  if (scheduledSearchApplyTimer) {
+    window.clearTimeout(scheduledSearchApplyTimer)
+    scheduledSearchApplyTimer = null
+  }
   saveSearchQueryNow()
   window.removeEventListener('keydown', handleWindowKeydown)
   if (systemThemeQuery.value) {
@@ -847,6 +883,7 @@ onBeforeUnmount(() => {
     :highlighted-card-key="highlightedCardKey"
     :is-search-mode="Boolean(searchTokens.length)"
     :search-query="searchQuery"
+    :active-search-query="activeSearchQuery"
     :empty-text="emptyText"
     :show-open-count="uiSettings.showOpenCount"
     :theme-status="themeStatus"
