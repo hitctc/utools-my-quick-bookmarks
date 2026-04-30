@@ -101,6 +101,7 @@ test('normalizeUiSettings merges saved settings with defaults', () => {
     showOpenCount: true,
     themeMode: 'system',
     windowHeight: 640,
+    lastSearchQuery: '',
   })
 })
 
@@ -115,6 +116,7 @@ test('normalizeUiSettings keeps both recent-opened and open-count toggles', () =
     showOpenCount: false,
     themeMode: 'system',
     windowHeight: 640,
+    lastSearchQuery: '',
   })
 })
 
@@ -127,12 +129,14 @@ test('normalizeUiSettings falls back to system theme mode for missing or invalid
     showOpenCount: true,
     themeMode: 'system',
     windowHeight: 640,
+    lastSearchQuery: '',
   })
   assert.deepEqual(invalidResult, {
     showRecentOpened: true,
     showOpenCount: true,
     themeMode: 'system',
     windowHeight: 640,
+    lastSearchQuery: '',
   })
 })
 
@@ -145,12 +149,14 @@ test('normalizeUiSettings preserves dark and light theme modes', () => {
     showOpenCount: true,
     themeMode: 'dark',
     windowHeight: 640,
+    lastSearchQuery: '',
   })
   assert.deepEqual(lightResult, {
     showRecentOpened: true,
     showOpenCount: true,
     themeMode: 'light',
     windowHeight: 640,
+    lastSearchQuery: '',
   })
 })
 
@@ -162,6 +168,7 @@ test('normalizeUiSettings preserves a valid window height', () => {
     showOpenCount: true,
     themeMode: 'system',
     windowHeight: 720,
+    lastSearchQuery: '',
   })
 })
 
@@ -175,18 +182,21 @@ test('normalizeUiSettings falls back to default window height for invalid values
     showOpenCount: true,
     themeMode: 'system',
     windowHeight: 640,
+    lastSearchQuery: '',
   })
   assert.deepEqual(negativeResult, {
     showRecentOpened: true,
     showOpenCount: true,
     themeMode: 'system',
     windowHeight: 640,
+    lastSearchQuery: '',
   })
   assert.deepEqual(textResult, {
     showRecentOpened: true,
     showOpenCount: true,
     themeMode: 'system',
     windowHeight: 640,
+    lastSearchQuery: '',
   })
 })
 
@@ -199,13 +209,35 @@ test('normalizeUiSettings clamps window height into the supported slider range',
     showOpenCount: true,
     themeMode: 'system',
     windowHeight: 480,
+    lastSearchQuery: '',
   })
   assert.deepEqual(highResult, {
     showRecentOpened: true,
     showOpenCount: true,
     themeMode: 'system',
     windowHeight: 960,
+    lastSearchQuery: '',
   })
+})
+
+test('normalizeUiSettings keeps a trimmed last search query for next launch', () => {
+  const result = normalizeUiSettings({ lastSearchQuery: '  docs api  ' })
+
+  assert.deepEqual(result, {
+    showRecentOpened: true,
+    showOpenCount: true,
+    themeMode: 'system',
+    windowHeight: 640,
+    lastSearchQuery: 'docs api',
+  })
+})
+
+test('normalizeUiSettings drops invalid and overlong last search queries', () => {
+  const invalidResult = normalizeUiSettings({ lastSearchQuery: 123 })
+  const longResult = normalizeUiSettings({ lastSearchQuery: 'x'.repeat(121) })
+
+  assert.equal(invalidResult.lastSearchQuery, '')
+  assert.equal(longResult.lastSearchQuery, '')
 })
 
 test('normalizePinnedBookmarkMap drops invalid bookmark ids and timestamps', () => {

@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import BookmarkCover from './BookmarkCover.vue'
 import { getBookmarkSearchMeta } from '../search'
-import type { BookmarkCardItem } from '../types'
+import type { BookmarkCardItem, BookmarkSearchMeta } from '../types'
 
 const props = withDefaults(
   defineProps<{
@@ -11,6 +11,7 @@ const props = withDefaults(
     keyboardActive?: boolean
     showOpenCount?: boolean
     searchTokens?: string[]
+    searchMeta?: BookmarkSearchMeta
   }>(),
   {
     keyboardActive: false,
@@ -25,7 +26,7 @@ const emit = defineEmits<{
 }>()
 
 const pinButtonLabel = computed(() => (props.item.isPinned ? '已置顶' : '置顶'))
-const searchMeta = computed(() => getBookmarkSearchMeta(props.item, props.searchTokens))
+const resolvedSearchMeta = computed(() => props.searchMeta ?? getBookmarkSearchMeta(props.item, props.searchTokens))
 
 // 打开动作只负责把 URL 交回上层，避免卡片组件自己绑定具体的打开实现。
 function handleOpen() {
@@ -56,17 +57,17 @@ function handleTogglePin(event: MouseEvent) {
 
     <button type="button" class="bookmark-card__open" @keydown.enter.stop @click="handleOpen">
       <BookmarkCover
-        :title="searchMeta.title"
-        :site-label="searchMeta.siteLabel"
-        :path-label="searchMeta.pathLabel"
-        :primary-match-label="searchMeta.primaryMatchLabel"
+        :title="resolvedSearchMeta.title"
+        :site-label="resolvedSearchMeta.siteLabel"
+        :path-label="resolvedSearchMeta.pathLabel"
+        :primary-match-label="resolvedSearchMeta.primaryMatchLabel"
         :display-number="displayNumber"
         :open-count="item.openCount"
         :show-open-count="showOpenCount"
         :keyboard-active="keyboardActive"
-        :title-segments="searchMeta.highlightedTitleSegments"
-        :site-segments="searchMeta.highlightedSiteSegments"
-        :path-segments="searchMeta.highlightedPathSegments"
+        :title-segments="resolvedSearchMeta.highlightedTitleSegments"
+        :site-segments="resolvedSearchMeta.highlightedSiteSegments"
+        :path-segments="resolvedSearchMeta.highlightedPathSegments"
       />
     </button>
   </article>

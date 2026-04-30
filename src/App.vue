@@ -23,6 +23,7 @@ import type {
   BookmarkRecentRecord,
   BookmarkSection,
   BookmarkResolvedTheme,
+  BookmarkSearchMeta,
   BookmarkUiSettings,
   BookmarkThemeMode,
   BookmarkSourceRoot,
@@ -48,6 +49,7 @@ type SyncPersistedStateOptions = {
   skipBookmarkRefresh?: boolean
 }
 const DEFAULT_WINDOW_HEIGHT = 640
+const SEARCH_QUERY_SAVE_DELAY_MS = 200
 
 const currentView = ref<'home' | 'settings'>('home')
 const bookmarkPath = ref('')
@@ -66,6 +68,7 @@ const uiSettings = ref<BookmarkUiSettings>({
   showOpenCount: true,
   themeMode: 'system',
   windowHeight: DEFAULT_WINDOW_HEIGHT,
+  lastSearchQuery: '',
 })
 const prefersDark = ref(false)
 const pinnedMap = ref<PinnedBookmarkMap>({})
@@ -73,6 +76,7 @@ const recentOpenedMap = ref<RecentOpenedMap>({})
 const systemThemeQuery = ref<MediaQueryList | null>(null)
 const homeViewRef = ref<{ focusSearchInput: () => void } | null>(null)
 let scheduledRefreshTimer: ReturnType<typeof globalThis.setTimeout> | null = null
+let scheduledSearchQuerySaveTimer: ReturnType<typeof globalThis.setTimeout> | null = null
 type BookmarkCardRect = {
   cardKey: string
   index: number
@@ -271,8 +275,46 @@ function syncHomeSearchFocus() {
 }
 
 function handleSearchQueryChange(nextQuery: string) {
-  searchQuery.value = String(nextQuery || '')
+  const normalizedQuery = String(nextQuery || '')
+  searchQuery.value = normalizedQuery
+  uiSettings.value = {
+    ...uiSettings.value,
+    lastSearchQuery: normalizedQuery,
+  }
   highlightedIndex.value = 0
+  scheduleSearchQuerySave(normalizedQuery)
+}
+
+// 搜索词只属于首页 UI 状态，延迟写入可以减少输入时频繁打 dbStorage。
+function scheduleSearchQuerySave(nextQuery: string) {
+  if (!window.services) {
+    return
+  }
+
+  if (scheduledSearchQuerySaveTimer) {
+    window.clearTimeout(scheduledSearchQuerySaveTimer)
+  }
+
+  scheduledSearchQuerySaveTimer = window.setTimeout(() => {
+    scheduledSearchQuerySaveTimer = null
+    saveSearchQueryNow(nextQuery)
+  }, SEARCH_QUERY_SAVE_DELAY_MS)
+}
+
+// 关闭或切换关键视图前立即落盘，避免用户刚输入完就退出导致最后一个词丢失。
+function saveSearchQueryNow(nextQuery: string = searchQuery.value) {
+  if (!window.services) {
+    return
+  }
+
+  if (scheduledSearchQuerySaveTimer) {
+    window.clearTimeout(scheduledSearchQuerySaveTimer)
+    scheduledSearchQuerySaveTimer = null
+  }
+
+  uiSettings.value = window.services.saveBookmarkUiSettings({
+    lastSearchQuery: String(nextQuery || ''),
+  }) as BookmarkUiSettings
 }
 
 function escapeCardKey(cardKey: string) {
@@ -445,6 +487,7 @@ function syncPersistedState(
   recentOpenedMap.value = nextRecentOpenedMap
   applyPluginWindowHeight(nextUiSettings.windowHeight)
   bookmarkPath.value = nextBookmarkPath
+  searchQuery.value = nextUiSettings.lastSearchQuery
 
   if (options.skipBookmarkRefresh) {
     return
@@ -464,7 +507,6 @@ function initializeApp() {
   currentView.value = 'home'
   homeError.value = ''
   settingsError.value = ''
-  searchQuery.value = ''
   highlightedIndex.value = 0
   refreshState.value = 'idle'
 
@@ -558,12 +600,14 @@ async function scrollViewportToTop() {
 
 // 打开设置页时先切视图，再把页面滚动位置重置到顶部。
 function openSettingsView() {
+  saveSearchQueryNow()
   currentView.value = 'settings'
   void scrollViewportToTop()
 }
 
 // 从设置页返回首页时也走统一切换入口，避免状态和滚动分叉。
 function backToHome() {
+  saveSearchQueryNow()
   currentView.value = 'home'
   syncPersistedState('home', { forceRefresh: true })
 }
@@ -618,15 +662,28 @@ const mergedItems = computed<BookmarkCardItem[]>(() =>
   }),
 )
 
-const searchableItems = computed(() => {
+const searchResultEntries = computed<BookmarkCardEntry[]>(() => {
   if (!searchTokens.value.length) {
-    return mergedItems.value
+    return []
   }
 
-  return sortItemsPinnedFirst(
-    mergedItems.value.filter(item => getBookmarkSearchMeta(item, searchTokens.value).matches),
-    pinnedMap.value,
-  )
+  const searchMetaById = new Map<string, BookmarkSearchMeta>()
+  const matchedItems = mergedItems.value.filter(item => {
+    const searchMeta = getBookmarkSearchMeta(item, searchTokens.value) as BookmarkSearchMeta
+
+    if (!searchMeta.matches) {
+      return false
+    }
+
+    searchMetaById.set(item.id, searchMeta)
+    return true
+  })
+
+  return sortItemsPinnedFirst(matchedItems, pinnedMap.value).map((item, index) => ({
+    cardKey: `search:${item.id}:${index}`,
+    item,
+    searchMeta: searchMetaById.get(item.id),
+  }))
 })
 
 const pinnedItems = computed(() =>
@@ -644,14 +701,13 @@ const regularItems = computed(() =>
 )
 
 const visibleSections = computed<BookmarkSection[]>(() => {
-  const query = searchQuery.value.trim()
   if (searchTokens.value.length) {
-    return searchableItems.value.length
+    return searchResultEntries.value.length
       ? [
           {
             key: 'search',
             title: '搜索结果',
-            entries: buildSectionEntries('search', searchableItems.value),
+            entries: searchResultEntries.value,
           },
         ]
       : []
@@ -768,6 +824,7 @@ onBeforeUnmount(() => {
     window.clearTimeout(scheduledRefreshTimer)
     scheduledRefreshTimer = null
   }
+  saveSearchQueryNow()
   window.removeEventListener('keydown', handleWindowKeydown)
   if (systemThemeQuery.value) {
     detachSystemThemeListener(systemThemeQuery.value)

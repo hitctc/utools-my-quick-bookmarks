@@ -3,9 +3,11 @@ const DEFAULT_UI_SETTINGS = {
   showOpenCount: true,
   themeMode: 'system',
   windowHeight: 640,
+  lastSearchQuery: '',
 }
 const WINDOW_HEIGHT_MIN = 480
 const WINDOW_HEIGHT_MAX = 960
+const LAST_SEARCH_QUERY_MAX_LENGTH = 120
 
 const VALID_THEME_MODES = new Set(['system', 'dark', 'light'])
 
@@ -66,9 +68,13 @@ function normalizeUiSettings(raw) {
   const data = raw && typeof raw === 'object' ? raw : {}
   const themeMode = VALID_THEME_MODES.has(data.themeMode) ? data.themeMode : DEFAULT_UI_SETTINGS.themeMode
   const windowHeight = Math.floor(Number(data.windowHeight))
+  const lastSearchQuery = typeof data.lastSearchQuery === 'string' ? data.lastSearchQuery.trim() : ''
   const normalizedWindowHeight = Number.isFinite(windowHeight) && windowHeight > 0
     ? Math.min(Math.max(windowHeight, WINDOW_HEIGHT_MIN), WINDOW_HEIGHT_MAX)
     : DEFAULT_UI_SETTINGS.windowHeight
+  const normalizedLastSearchQuery = lastSearchQuery.length <= LAST_SEARCH_QUERY_MAX_LENGTH
+    ? lastSearchQuery
+    : DEFAULT_UI_SETTINGS.lastSearchQuery
 
   return {
     showRecentOpened:
@@ -81,6 +87,7 @@ function normalizeUiSettings(raw) {
         : DEFAULT_UI_SETTINGS.showOpenCount,
     themeMode,
     windowHeight: normalizedWindowHeight,
+    lastSearchQuery: normalizedLastSearchQuery,
   }
 }
 

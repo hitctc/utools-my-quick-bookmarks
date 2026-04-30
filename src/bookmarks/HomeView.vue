@@ -202,6 +202,7 @@ defineExpose({
           >
             <BookmarkCard
               :item="entry.item"
+              :search-meta="entry.searchMeta"
               :display-number="sectionStartNumbers[section.key] + index"
               :show-open-count="props.showOpenCount"
               :keyboard-active="entry.cardKey === props.highlightedCardKey"
