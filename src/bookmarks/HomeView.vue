@@ -74,6 +74,16 @@ const emit = defineEmits<{
 
 const homeContentRef = ref<HTMLElement | null>(null)
 const searchInputRef = ref<HTMLInputElement | null>(null)
+const localSearchQuery = ref(props.searchQuery)
+const isComposing = ref(false)
+
+// 外部恢复搜索词时同步到本地（如重新进入插件时恢复上次搜索），组合输入期间跳过。
+watch(() => props.searchQuery, (newVal) => {
+  if (isComposing.value) return
+  if (newVal !== localSearchQuery.value) {
+    localSearchQuery.value = newVal
+  }
+})
 
 // 卡片高亮跟随已经应用的搜索词，避免输入框每个按键都带动全量卡片重算。
 const searchTokens = computed(() => normalizeSearchTokens(props.activeSearchQuery))
@@ -100,12 +110,29 @@ async function focusSearchInput() {
   searchInputRef.value?.focus({ preventScroll: true })
 }
 
-// 只向上层同步原始输入内容，分词、过滤和高亮仍由原有搜索状态统一处理。
+// 本地 ref 始终同步 DOM 值，保证 :value 与实际内容一致，Vue 不需要回写。
+// 组合输入期间只更新本地 ref，不 emit，避免拼音半成品触发搜索。
 function handleSearchInput(event: Event) {
-  emit('update-search-query', (event.target as HTMLInputElement).value)
+  const value = (event.target as HTMLInputElement).value
+  localSearchQuery.value = value
+  if (!isComposing.value) {
+    emit('update-search-query', value)
+  }
+}
+
+function handleCompositionStart() {
+  isComposing.value = true
+}
+
+function handleCompositionEnd(event: Event) {
+  isComposing.value = false
+  const value = (event.target as HTMLInputElement).value
+  localSearchQuery.value = value
+  emit('update-search-query', value)
 }
 
 function clearSearchInput() {
+  localSearchQuery.value = ''
   emit('update-search-query', '')
   void focusSearchInput()
 }
@@ -159,10 +186,12 @@ defineExpose({
           autocomplete="off"
           spellcheck="false"
           :disabled="loading"
-          :value="props.searchQuery"
+          :value="localSearchQuery"
           aria-label="搜索书签"
           placeholder="输入关键词，方向键选择卡片"
           @input="handleSearchInput"
+          @compositionstart="handleCompositionStart"
+          @compositionend="handleCompositionEnd"
         >
         <button
           v-if="props.searchQuery"
