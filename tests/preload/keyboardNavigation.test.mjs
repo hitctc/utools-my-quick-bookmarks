@@ -60,6 +60,25 @@ test('arrow keys do not intercept when the shortcut should stay with the system 
   }
 })
 
+test('IME composition keys remain available to the input method', () => {
+  for (const key of ['Enter', 'ArrowDown']) {
+    for (const composition of [{ isComposing: true }, { keyCode: 229 }]) {
+      const result = getKeyboardNavigationResult({
+        key,
+        currentView: 'home',
+        loading: false,
+        hasError: false,
+        highlightedIndex: 0,
+        entryCount: 3,
+        ...composition,
+      })
+
+      assert.equal(result.action, 'noop')
+      assert.equal(result.preventDefault, false)
+    }
+  }
+})
+
 test('Enter opens current entry and Escape focuses search input', () => {
   const openResult = getKeyboardNavigationResult({
     key: 'Enter',

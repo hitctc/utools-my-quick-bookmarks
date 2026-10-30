@@ -378,11 +378,13 @@ function collectVisibleCardRects() {
   return rects
 }
 
-// 键盘导航始终对当前可见卡片生效，回车直接复用同一套打开逻辑。
+// 根据键盘事件导航可见卡片；组合输入时保留输入法按键，普通回车打开当前项。
 function handleWindowKeydown(event: KeyboardEvent) {
   const entries = visibleEntries.value
   const result = getKeyboardNavigationResult({
     key: event.key,
+    isComposing: event.isComposing,
+    keyCode: event.keyCode,
     currentView: currentView.value,
     loading: loading.value,
     hasError: Boolean(homeError.value),

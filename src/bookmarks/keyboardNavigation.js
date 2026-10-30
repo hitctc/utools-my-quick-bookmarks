@@ -120,8 +120,11 @@ function nearestHorizontalCandidate(current, rects, direction) {
   return best.index
 }
 
+// 根据按键和页面状态决定导航动作；组合输入期间把按键留给输入法处理。
 export function getKeyboardNavigationResult({
   key,
+  isComposing,
+  keyCode,
   currentView,
   loading,
   hasError,
@@ -134,6 +137,9 @@ export function getKeyboardNavigationResult({
 }) {
   if (
     currentView !== 'home'
+    // 部分输入法用 229 标记组合输入按键，即使 isComposing 未设置。
+    || isComposing
+    || keyCode === 229
     || loading
     || hasError
     || metaKey
