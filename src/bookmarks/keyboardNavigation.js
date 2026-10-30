@@ -1,5 +1,28 @@
 const ROW_TOLERANCE_PX = 8
 
+// 批量读取卡片位置并核对显示顺序；节点缺失或顺序变化时返回空列表，避免跳错卡片。
+export function collectCardRects(entries, elements) {
+  if (entries.length !== elements.length) return []
+
+  const rects = []
+  for (const [index, entry] of entries.entries()) {
+    const element = elements[index]
+    if (element.dataset.bookmarkCardKey !== entry.cardKey) return []
+    const rect = element.getBoundingClientRect()
+    rects.push({
+      cardKey: entry.cardKey,
+      index,
+      left: rect.left,
+      right: rect.right,
+      top: rect.top,
+      bottom: rect.bottom,
+      centerX: rect.left + rect.width / 2,
+      centerY: rect.top + rect.height / 2,
+    })
+  }
+  return rects
+}
+
 function isFiniteNumber(value) {
   return typeof value === 'number' && Number.isFinite(value)
 }

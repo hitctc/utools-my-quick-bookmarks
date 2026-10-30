@@ -1,7 +1,22 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { getKeyboardNavigationResult, getSpatialNavigationIndex } from '../../src/bookmarks/keyboardNavigation.js'
+import { collectCardRects, getKeyboardNavigationResult, getSpatialNavigationIndex } from '../../src/bookmarks/keyboardNavigation.js'
+
+test('collectCardRects preserves card order and rejects missing or reordered nodes', () => {
+  const entries = [{ cardKey: 'a' }, { cardKey: 'b' }]
+  const element = key => ({
+    dataset: { bookmarkCardKey: key },
+    getBoundingClientRect: () => ({ left: 10, right: 110, top: 20, bottom: 60, width: 100, height: 40 }),
+  })
+  const elements = [element('a'), element('b')]
+
+  assert.deepEqual(collectCardRects(entries, elements).map(rect => [rect.cardKey, rect.index, rect.centerX, rect.centerY]), [
+    ['a', 0, 60, 40], ['b', 1, 60, 40],
+  ])
+  assert.deepEqual(collectCardRects(entries, elements.slice(0, 1)), [])
+  assert.deepEqual(collectCardRects(entries, elements.reverse()), [])
+})
 
 test('all arrow keys are captured for card navigation and prevent internal search input cursor movement', () => {
   for (const key of ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']) {

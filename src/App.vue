@@ -3,7 +3,9 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import HomeView from './bookmarks/HomeView.vue'
 import SettingsView from './bookmarks/SettingsView.vue'
 import { sortItemsPinnedFirst } from './bookmarks/itemOrder.js'
+import { shouldReuseBookmarks } from './bookmarks/startup.js'
 import {
+  collectCardRects,
   getKeyboardNavigationResult,
   getSpatialNavigationIndex,
 } from './bookmarks/keyboardNavigation.js'
@@ -80,16 +82,6 @@ const homeViewRef = ref<{ focusSearchInput: () => void } | null>(null)
 let scheduledRefreshTimer: ReturnType<typeof globalThis.setTimeout> | null = null
 let scheduledSearchQuerySaveTimer: ReturnType<typeof globalThis.setTimeout> | null = null
 let scheduledSearchApplyTimer: ReturnType<typeof globalThis.setTimeout> | null = null
-type BookmarkCardRect = {
-  cardKey: string
-  index: number
-  left: number
-  right: number
-  top: number
-  bottom: number
-  centerX: number
-  centerY: number
-}
 
 // 统一把底层解析结果整理成首页卡片模型，避免展示层重复拼字段。
 function normalizeBookmarkItem(item: BookmarkItem): BookmarkItem {
@@ -339,43 +331,14 @@ function saveSearchQueryNow(nextQuery: string = searchQuery.value) {
   }) as BookmarkUiSettings
 }
 
-function escapeCardKey(cardKey: string) {
-  if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') {
-    return CSS.escape(cardKey)
-  }
-
-  return cardKey.replace(/"/g, '\\"')
-}
-
+// 一次获取所有卡片，避免每次方向键都逐项扫描整份页面。
 function collectVisibleCardRects() {
   if (typeof document === 'undefined') {
     return []
   }
 
-  const rects: BookmarkCardRect[] = []
-
-  for (const [index, entry] of visibleEntries.value.entries()) {
-    const selector = `[data-bookmark-card-key="${escapeCardKey(entry.cardKey)}"]`
-    const element = document.querySelector<HTMLElement>(selector)
-    if (!element) {
-      return []
-    }
-
-    const rect = element.getBoundingClientRect()
-
-    rects.push({
-      cardKey: entry.cardKey,
-      index,
-      left: rect.left,
-      right: rect.right,
-      top: rect.top,
-      bottom: rect.bottom,
-      centerX: rect.left + rect.width / 2,
-      centerY: rect.top + rect.height / 2,
-    })
-  }
-
-  return rects
+  const elements = document.querySelectorAll<HTMLElement>('[data-bookmark-card-key]')
+  return collectCardRects(visibleEntries.value, elements)
 }
 
 // 根据键盘事件导航可见卡片；组合输入时保留输入法按键，普通回车打开当前项。
@@ -527,7 +490,7 @@ function syncPersistedState(
   }
 }
 
-// 初始化当前生效路径，并在插件真正进入时触发首次读取。
+// 进入时同步设置并恢复书签；后台重进优先复用内存，随后刷新本地文件。
 function initializeApp() {
   currentView.value = 'home'
   homeError.value = ''
@@ -540,17 +503,26 @@ function initializeApp() {
     return
   }
 
+  const previousPath = bookmarkPath.value
   syncPersistedState('home', { skipBookmarkRefresh: true })
-  const cachedResult = getBookmarkCache()
 
-  if (cachedResult && cachedResult.filePath === bookmarkPath.value) {
-    applyBookmarkLoadResult(cachedResult)
-  } else {
-    if (cachedResult) {
-      clearBookmarkCache()
+  if (!shouldReuseBookmarks({
+    bootstrapped: bootstrapped.value,
+    previousPath,
+    currentPath: bookmarkPath.value,
+    itemCount: items.value.length,
+  })) {
+    const cachedResult = getBookmarkCache()
+
+    if (cachedResult && cachedResult.filePath === bookmarkPath.value) {
+      applyBookmarkLoadResult(cachedResult)
+    } else {
+      if (cachedResult) {
+        clearBookmarkCache()
+      }
+      items.value = []
+      total.value = 0
     }
-    items.value = []
-    total.value = 0
   }
 
   bootstrapped.value = true

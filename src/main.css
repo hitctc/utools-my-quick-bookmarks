@@ -508,6 +508,9 @@ a {
 
 .bookmark-grid__item {
   min-width: 0;
+  /* 保留网格占位和键盘定位，同时推迟屏幕外卡片的布局与绘制。 */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 98px;
 }
 
 .bookmark-card {
